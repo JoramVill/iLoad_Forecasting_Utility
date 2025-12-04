@@ -10,6 +10,15 @@ export interface WeatherLocation {
   demandColumn: string;
 }
 
+// Cluster-based location for capacity factor forecasting
+export interface ClusterLocation {
+  clusterId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  stationCodes: string[];
+}
+
 export interface WeatherServiceConfig {
   apiKey: string;
   cacheDir: string;
@@ -34,6 +43,26 @@ const HOURLY_ELEMENTS = [
   'precip',
   'windgust',
   'windspeed',
+  'cloudcover',
+  'solarradiation',
+  'solarenergy',
+  'uvindex'
+];
+
+// Extended wind elements for wind farm forecasting (hub height ~80-100m)
+// Visual Crossing offers wind data at 50m, 80m, and 100m heights
+const WIND_ELEMENTS = [
+  'datetime',
+  'name',
+  'latitude',
+  'longitude',
+  'temp',
+  'dew',
+  'precip',
+  'windgust',
+  'windspeed',
+  'windspeed100',   // Wind speed at 100m (hub height)
+  'winddir100',     // Wind direction at 100m
   'cloudcover',
   'solarradiation',
   'solarenergy',
@@ -105,6 +134,65 @@ export class WeatherService {
    */
   private async downloadDayData(location: WeatherLocation, date: string): Promise<string> {
     const url = `${this.baseUrl}${encodeURIComponent(location.name)}/${date}/${date}` +
+                `?unitGroup=metric&contentType=csv&include=hours` +
+                `&elements=${HOURLY_ELEMENTS.join(',')}` +
+                `&key=${this.apiKey}`;
+
+    const response = await axios({
+      method: 'GET',
+      url: url,
+      timeout: 60000
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Download weather data for a single day using coordinates (lat/lon)
+   * @param clusterId - Cluster ID for caching purposes
+   * @param latitude - Latitude of the location
+   * @param longitude - Longitude of the location
+   * @param date - Date in YYYY-MM-DD format
+   * @param useWindElements - If true, try to fetch extended wind elements (100m height)
+   *                          Falls back to standard elements if premium features unavailable
+   */
+  private async downloadDayDataByCoords(
+    clusterId: string,
+    latitude: number,
+    longitude: number,
+    date: string,
+    useWindElements: boolean = false
+  ): Promise<string> {
+    // Visual Crossing API accepts lat,lon as location
+    const locationStr = `${latitude},${longitude}`;
+
+    // Try wind elements first if requested
+    if (useWindElements) {
+      try {
+        const windUrl = `${this.baseUrl}${locationStr}/${date}/${date}` +
+                        `?unitGroup=metric&contentType=csv&include=hours` +
+                        `&elements=${WIND_ELEMENTS.join(',')}` +
+                        `&key=${this.apiKey}`;
+
+        const response = await axios({
+          method: 'GET',
+          url: windUrl,
+          timeout: 60000
+        });
+
+        return response.data;
+      } catch (error: any) {
+        // If 401 or 400, extended wind elements not available - fall back to standard
+        if (error.response?.status === 401 || error.response?.status === 400) {
+          // Fall through to standard elements
+        } else {
+          throw error; // Re-throw other errors (network, etc.)
+        }
+      }
+    }
+
+    // Standard elements (fallback or default)
+    const url = `${this.baseUrl}${locationStr}/${date}/${date}` +
                 `?unitGroup=metric&contentType=csv&include=hours` +
                 `&elements=${HOURLY_ELEMENTS.join(',')}` +
                 `&key=${this.apiKey}`;
@@ -260,6 +348,120 @@ export class WeatherService {
     }
 
     return savedFiles;
+  }
+
+  /**
+   * Fetch weather data for a cluster location using coordinates
+   * Returns combined CSV data for all days
+   * @param cluster - Cluster location with coordinates
+   * @param startDate - Start date in YYYY-MM-DD format
+   * @param endDate - End date in YYYY-MM-DD format
+   * @param onProgress - Progress callback
+   * @param isWindCluster - If true, fetch extended wind elements (100m height) for wind farm forecasting
+   */
+  async fetchClusterWeatherData(
+    cluster: ClusterLocation,
+    startDate: string,
+    endDate: string,
+    onProgress?: (message: string) => void,
+    isWindCluster: boolean = false
+  ): Promise<{ success: boolean; data?: string; error?: string; cached: number; downloaded: number }> {
+    const dates = this.getDateRange(startDate, endDate);
+    const allRows: string[] = [];
+    let header: string | null = null;
+    let cachedCount = 0;
+    let downloadedCount = 0;
+
+    // Use standard cache key for now - 100m wind data requires premium API subscription
+    // When premium access is available, the code will automatically try to fetch 100m data
+    // but will fall back to standard 10m data if unavailable
+    const cacheKey = cluster.clusterId;
+
+    onProgress?.(`Fetching ${isWindCluster ? 'wind (100m)' : 'standard'} weather for cluster ${cluster.clusterId} (${cluster.name}): ${dates.length} days`);
+
+    for (const date of dates) {
+      try {
+        let csvData: string | null = null;
+
+        // Check cache first (using cacheKey which includes wind suffix)
+        if (this.hasCachedData(cacheKey, date)) {
+          csvData = this.readCachedData(cacheKey, date);
+          cachedCount++;
+        } else {
+          // Download from API using coordinates
+          onProgress?.(`  Downloading ${cluster.clusterId} ${date}${isWindCluster ? ' (100m wind)' : ''}...`);
+          csvData = await this.downloadDayDataByCoords(
+            cluster.clusterId,
+            cluster.latitude,
+            cluster.longitude,
+            date,
+            isWindCluster  // Pass flag to request extended wind elements
+          );
+          this.saveCacheData(cacheKey, date, csvData);
+          downloadedCount++;
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        if (csvData) {
+          const lines = csvData.split('\n').filter(l => l.trim());
+
+          // Keep header from first file
+          if (!header && lines.length > 0) {
+            header = lines[0];
+          }
+
+          // Add data rows (skip header)
+          for (let i = 1; i < lines.length; i++) {
+            allRows.push(lines[i]);
+          }
+        }
+      } catch (error: any) {
+        onProgress?.(`  Error fetching ${date}: ${error.message}`);
+        // Continue with other dates
+      }
+    }
+
+    if (!header || allRows.length === 0) {
+      return { success: false, error: 'No weather data retrieved', cached: cachedCount, downloaded: downloadedCount };
+    }
+
+    // Combine header and all rows
+    const combinedData = [header, ...allRows].join('\n');
+
+    onProgress?.(`  ${cluster.clusterId}: ${cachedCount} cached, ${downloadedCount} downloaded`);
+
+    return { success: true, data: combinedData, cached: cachedCount, downloaded: downloadedCount };
+  }
+
+  /**
+   * Fetch weather data for all cluster locations
+   * Returns a map of clusterId -> CSV data
+   * @param clusters - Array of cluster locations
+   * @param startDate - Start date in YYYY-MM-DD format
+   * @param endDate - End date in YYYY-MM-DD format
+   * @param onProgress - Progress callback
+   * @param windClusterIds - Set of cluster IDs that are wind farms (will fetch 100m wind data)
+   */
+  async fetchAllClusters(
+    clusters: ClusterLocation[],
+    startDate: string,
+    endDate: string,
+    onProgress?: (message: string) => void,
+    windClusterIds?: Set<string>
+  ): Promise<Map<string, string>> {
+    const results = new Map<string, string>();
+
+    for (const cluster of clusters) {
+      const isWindCluster = windClusterIds?.has(cluster.clusterId) || false;
+      const result = await this.fetchClusterWeatherData(cluster, startDate, endDate, onProgress, isWindCluster);
+      if (result.success && result.data) {
+        results.set(cluster.clusterId, result.data);
+      }
+    }
+
+    return results;
   }
 
   /**

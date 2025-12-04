@@ -13,8 +13,10 @@ import { HybridModel } from './models/hybridModel.js';
 import { writeForecastCsv, writeModelReport, writeMetricsSummary } from './writers/index.js';
 import { REGION_MAPPINGS } from './constants/index.js';
 import { ForecastResult, TrainingSample, RawWeatherData } from './types/index.js';
-import { createWeatherService, DEFAULT_LOCATIONS } from './services/index.js';
+import { createWeatherService, DEFAULT_LOCATIONS, capacityFactorService, ClusterLocation } from './services/index.js';
 import { getDatabase, closeDatabase, DatabaseStats, StoredModel } from './database/index.js';
+import { ModelRouter } from './models/capacityFactor/index.js';
+import { CFacWeatherFeatures, StationType, getStationTypeFromCode, CFacForecastResult } from './types/capacityFactor.js';
 
 // Default API key (can be overridden by env or config)
 const DEFAULT_API_KEY = 'BJYBHG8K3YS8EFK46233M8L75';
@@ -1187,6 +1189,678 @@ dbCommand
       db.clearAll();
       closeDatabase();
       console.log('\n✅ Database cleared successfully');
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// CFAC commands - Capacity Factor Forecasting
+const cfacCommand = program
+  .command('cfac')
+  .description('Capacity factor forecasting for renewable/must-run generation');
+
+// CFAC FORECAST - Generate capacity factor forecasts
+cfacCommand
+  .command('forecast')
+  .description('Generate capacity factor forecast for renewable/must-run stations')
+  .requiredOption('-t, --training <path>', 'Training data: MRHCFac CSV file or directory')
+  .requiredOption('-s, --start <date>', 'Forecast start date (YYYY-MM-DD)')
+  .requiredOption('-e, --end <date>', 'Forecast end date (YYYY-MM-DD)')
+  .requiredOption('-o, --output <file>', 'Output forecast CSV file')
+  .option('--stations <file>', 'Stations JSON file', 'src/data/stations.json')
+  .option('--cache <dir>', 'Weather cache directory', './weather_cache')
+  .action(async (options) => {
+    try {
+      const apiKey = getApiKey();
+      const weatherService = createWeatherService(apiKey, options.cache);
+
+      console.log('\n📊 Capacity Factor Forecasting');
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      // Load station metadata
+      console.log('🔄 Loading station metadata...');
+      await capacityFactorService.loadStations(options.stations);
+      const stations = capacityFactorService.getAllStations();
+      const clusters = capacityFactorService.getClusters();
+      console.log(`   Loaded ${stations.size} stations`);
+      console.log(`   Loaded ${clusters.length} weather clusters`);
+
+      // Parse training data (capacity factors)
+      console.log('\n🔄 Parsing capacity factor training data...');
+      const cfacData = await capacityFactorService.parseCapacityFactorDirectory(
+        options.training,
+        (msg) => console.log(`   ${msg}`)
+      );
+
+      // Get unique station codes from training data
+      const trainingStations = capacityFactorService.getStationCodes(cfacData);
+      console.log(`   Found ${trainingStations.length} stations in training data`);
+
+      // Categorize stations by type
+      const stationsByType = new Map<StationType, string[]>();
+      for (const stationType of Object.values(StationType)) {
+        stationsByType.set(stationType as StationType, []);
+      }
+      for (const code of trainingStations) {
+        const type = getStationTypeFromCode(code);
+        stationsByType.get(type)!.push(code);
+      }
+
+      console.log('\n📋 Station types in training data:');
+      for (const [type, codes] of stationsByType) {
+        if (codes.length > 0) {
+          console.log(`   ${type}: ${codes.length} stations`);
+        }
+      }
+
+      // Identify wind clusters (clusters containing wind stations)
+      // These clusters will fetch 100m hub-height wind data for better accuracy
+      const windStations = stationsByType.get(StationType.WIND) || [];
+      const windClusterIds = new Set<string>();
+      for (const stationCode of windStations) {
+        const clusterId = capacityFactorService.getClusterForStation(stationCode);
+        if (clusterId) {
+          windClusterIds.add(clusterId);
+        }
+      }
+      if (windClusterIds.size > 0) {
+        console.log(`\n🌬️  Identified ${windClusterIds.size} wind clusters for 100m hub-height data`);
+      }
+
+      // Get date range from training data
+      const sortedCfac = [...cfacData].sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+      const trainStart = DateTime.fromJSDate(sortedCfac[0].datetime).toISODate()!;
+      const trainEnd = DateTime.fromJSDate(sortedCfac[sortedCfac.length - 1].datetime).toISODate()!;
+      console.log(`\n📅 Training data range: ${trainStart} to ${trainEnd}`);
+
+      // Fetch weather data for training period using cluster-based approach
+      // Wind clusters will receive 100m hub-height wind data
+      console.log('\n🌤️  Fetching cluster weather data for training period...');
+      const clusterWeatherCsv = await weatherService.fetchAllClusters(
+        clusters,
+        trainStart,
+        trainEnd,
+        (msg) => console.log(`   ${msg}`),
+        windClusterIds  // Pass wind cluster IDs for 100m data
+      );
+
+      if (clusterWeatherCsv.size === 0) {
+        console.error('❌ Failed to fetch weather data for training');
+        process.exit(1);
+      }
+      console.log(`   Fetched weather data for ${clusterWeatherCsv.size} clusters`);
+
+      // Helper to parse CSV line properly (handles quoted fields with commas)
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      // Parse cluster weather data into maps by clusterId -> datetime -> features
+      const clusterWeatherData = new Map<string, Map<string, CFacWeatherFeatures>>();
+      for (const [clusterId, csvData] of clusterWeatherCsv) {
+        const datetimeMap = new Map<string, CFacWeatherFeatures>();
+        const lines = csvData.split('\n').filter(l => l.trim());
+
+        if (lines.length < 2) continue;
+
+        // Parse header to get column indices (header doesn't have quoted fields)
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const colIdx = (name: string) => headers.indexOf(name);
+
+        for (let i = 1; i < lines.length; i++) {
+          // Use proper CSV parsing for data rows (may have quoted fields)
+          const values = parseCSVLine(lines[i]);
+          const datetimeStr = values[colIdx('datetime')];
+          if (!datetimeStr) continue;
+
+          const dt = DateTime.fromISO(datetimeStr);
+          if (!dt.isValid) continue;
+
+          // Add 1 hour to convert from hour-starting (weather API) to hour-ending (CFac format)
+          // Use simple format for datetime key to avoid timezone mismatches
+          const key = dt.plus({ hours: 1 }).toFormat('yyyy-MM-dd HH:mm');
+
+          // Parse standard weather features
+          const weatherFeatures: CFacWeatherFeatures = {
+            windSpeed: parseFloat(values[colIdx('windspeed')]) || 0,
+            windGust: parseFloat(values[colIdx('windgust')]) || 0,
+            solarRadiation: parseFloat(values[colIdx('solarradiation')]) || 0,
+            cloudCover: parseFloat(values[colIdx('cloudcover')]) || 0,
+            temperature: parseFloat(values[colIdx('temp')]) || 0,
+            precipitation: parseFloat(values[colIdx('precip')]) || 0
+          };
+
+          // Parse 100m wind data for wind clusters (if available)
+          const windSpeed100Idx = colIdx('windspeed100');
+          const windDir100Idx = colIdx('winddir100');
+          if (windSpeed100Idx >= 0 && values[windSpeed100Idx]) {
+            weatherFeatures.windSpeed100 = parseFloat(values[windSpeed100Idx]) || undefined;
+          }
+          if (windDir100Idx >= 0 && values[windDir100Idx]) {
+            weatherFeatures.windDirection100 = parseFloat(values[windDir100Idx]) || undefined;
+          }
+
+          datetimeMap.set(key, weatherFeatures);
+        }
+
+        clusterWeatherData.set(clusterId, datetimeMap);
+      }
+
+      // Build station-to-weather mapping for training
+      // Each station uses its cluster's weather data
+      const weatherMap = new Map<string, CFacWeatherFeatures>();
+      let matchedRecords = 0;
+
+      // Get all unique datetimes from training data
+      const trainDatetimes = new Set<string>();
+      for (const record of cfacData) {
+        const dt = DateTime.fromJSDate(record.datetime);
+        // Use simple format for datetime key to match weather data keys
+        trainDatetimes.add(dt.toFormat('yyyy-MM-dd HH:mm'));
+      }
+
+      // For each datetime, build station weather mappings
+      for (const datetimeKey of trainDatetimes) {
+        // Store weather keyed by datetime for the buildTrainingSamples function
+        // Use average of all cluster weather for the datetime key
+        let sumTemp = 0, sumWind = 0, sumGust = 0, sumSolar = 0, sumCloud = 0, sumPrecip = 0;
+        let count = 0;
+
+        for (const [, datetimeMap] of clusterWeatherData) {
+          const weather = datetimeMap.get(datetimeKey);
+          if (weather) {
+            sumTemp += weather.temperature;
+            sumWind += weather.windSpeed;
+            sumGust += weather.windGust;
+            sumSolar += weather.solarRadiation;
+            sumCloud += weather.cloudCover;
+            sumPrecip += weather.precipitation || 0;
+            count++;
+          }
+        }
+
+        if (count > 0) {
+          weatherMap.set(datetimeKey, {
+            windSpeed: sumWind / count,
+            windGust: sumGust / count,
+            solarRadiation: sumSolar / count,
+            cloudCover: sumCloud / count,
+            temperature: sumTemp / count,
+            precipitation: sumPrecip / count
+          });
+          matchedRecords++;
+        }
+      }
+      console.log(`   Built weather map with ${matchedRecords} hourly records from ${clusterWeatherData.size} clusters`);
+
+      // Build training samples
+      console.log('\n🔧 Building training samples...');
+      const trainingSamples = await capacityFactorService.buildTrainingSamples(
+        cfacData,
+        weatherMap,
+        (msg) => console.log(`   ${msg}`)
+      );
+
+      // Train models
+      console.log('\n🎯 Training capacity factor models...');
+      const modelRouter = new ModelRouter();
+      await modelRouter.trainAllModels(trainingSamples, (msg) => console.log(`   ${msg}`));
+
+      // Show training summary
+      const metrics = modelRouter.getMetrics();
+      console.log(`\n📈 Training Summary: ${modelRouter.getModelCount()} models trained`);
+
+      // Calculate average metrics by type
+      const metricsByType = new Map<string, { mape: number; count: number }>();
+      for (const [, m] of metrics) {
+        const key = m.stationType;
+        if (!metricsByType.has(key)) {
+          metricsByType.set(key, { mape: 0, count: 0 });
+        }
+        const stats = metricsByType.get(key)!;
+        stats.mape += m.mape;
+        stats.count++;
+      }
+
+      console.log('\n┌─────────────────┬──────────┬──────────┐');
+      console.log('│   Station Type  │ Stations │ Avg MAPE │');
+      console.log('├─────────────────┼──────────┼──────────┤');
+      for (const [type, stats] of metricsByType) {
+        const avgMape = stats.mape / stats.count;
+        console.log(`│ ${type.padEnd(15)} │ ${stats.count.toString().padStart(8)} │ ${avgMape.toFixed(2).padStart(7)}% │`);
+      }
+      console.log('└─────────────────┴──────────┴──────────┘');
+
+      // Fetch weather data for forecast period using cluster-based approach
+      // Wind clusters will receive 100m hub-height wind data
+      console.log('\n🌤️  Fetching cluster weather data for forecast period...');
+      const forecastClusterWeatherCsv = await weatherService.fetchAllClusters(
+        clusters,
+        options.start,
+        options.end,
+        (msg) => console.log(`   ${msg}`),
+        windClusterIds  // Pass wind cluster IDs for 100m data
+      );
+
+      // Parse forecast cluster weather data
+      const forecastClusterWeatherData = new Map<string, Map<string, CFacWeatherFeatures>>();
+      const forecastDatetimes: Date[] = [];
+
+      for (const [clusterId, csvData] of forecastClusterWeatherCsv) {
+        const datetimeMap = new Map<string, CFacWeatherFeatures>();
+        const lines = csvData.split('\n').filter(l => l.trim());
+
+        if (lines.length < 2) continue;
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const colIdx = (name: string) => headers.indexOf(name);
+
+        for (let i = 1; i < lines.length; i++) {
+          // Use proper CSV parsing for data rows (may have quoted fields)
+          const values = parseCSVLine(lines[i]);
+          const datetimeStr = values[colIdx('datetime')];
+          if (!datetimeStr) continue;
+
+          // Visual Crossing returns data at interval start, we need to shift by +1 hour for MRHCFac format (hour-ending)
+          const dt = DateTime.fromISO(datetimeStr).plus({ hours: 1 });
+          if (!dt.isValid) continue;
+
+          // Use simple format for datetime key to avoid timezone mismatches
+          const key = dt.toFormat('yyyy-MM-dd HH:mm');
+          const datetime = dt.toJSDate();
+
+          // Parse standard weather features
+          const weatherFeatures: CFacWeatherFeatures = {
+            windSpeed: parseFloat(values[colIdx('windspeed')]) || 0,
+            windGust: parseFloat(values[colIdx('windgust')]) || 0,
+            solarRadiation: parseFloat(values[colIdx('solarradiation')]) || 0,
+            cloudCover: parseFloat(values[colIdx('cloudcover')]) || 0,
+            temperature: parseFloat(values[colIdx('temp')]) || 0,
+            precipitation: parseFloat(values[colIdx('precip')]) || 0
+          };
+
+          // Parse 100m wind data for wind clusters (if available)
+          const windSpeed100Idx = colIdx('windspeed100');
+          const windDir100Idx = colIdx('winddir100');
+          if (windSpeed100Idx >= 0 && values[windSpeed100Idx]) {
+            weatherFeatures.windSpeed100 = parseFloat(values[windSpeed100Idx]) || undefined;
+          }
+          if (windDir100Idx >= 0 && values[windDir100Idx]) {
+            weatherFeatures.windDirection100 = parseFloat(values[windDir100Idx]) || undefined;
+          }
+
+          datetimeMap.set(key, weatherFeatures);
+          forecastDatetimes.push(datetime);
+        }
+
+        forecastClusterWeatherData.set(clusterId, datetimeMap);
+      }
+
+      // Get unique sorted datetimes
+      const uniqueDatetimes = [...new Set(forecastDatetimes.map(d => d.getTime()))]
+        .sort((a, b) => a - b)
+        .map(ts => new Date(ts));
+
+      console.log(`   Forecast period: ${uniqueDatetimes.length} hours across ${forecastClusterWeatherData.size} clusters`);
+
+      // Generate forecasts using station-specific cluster weather
+      console.log('\n🔮 Generating capacity factor forecasts...');
+      const forecasts: CFacForecastResult[] = [];
+
+      for (const datetime of uniqueDatetimes) {
+        const dt = DateTime.fromJSDate(datetime);
+        // Use simple format for datetime key to match weather data keys
+        const weatherKey = dt.toFormat('yyyy-MM-dd HH:mm');
+
+        // Build station-specific weather map using each station's cluster weather
+        const stationWeather = new Map<string, CFacWeatherFeatures>();
+        for (const code of trainingStations) {
+          const clusterId = capacityFactorService.getClusterForStation(code);
+          if (clusterId) {
+            const clusterData = forecastClusterWeatherData.get(clusterId);
+            if (clusterData) {
+              const weather = clusterData.get(weatherKey);
+              if (weather) {
+                stationWeather.set(code, weather);
+              }
+            }
+          }
+
+          // Fallback: if station has no cluster, use average of all clusters
+          if (!stationWeather.has(code)) {
+            let sumTemp = 0, sumWind = 0, sumGust = 0, sumSolar = 0, sumCloud = 0, count = 0;
+            for (const [, clusterData] of forecastClusterWeatherData) {
+              const weather = clusterData.get(weatherKey);
+              if (weather) {
+                sumTemp += weather.temperature;
+                sumWind += weather.windSpeed;
+                sumGust += weather.windGust;
+                sumSolar += weather.solarRadiation;
+                sumCloud += weather.cloudCover;
+                count++;
+              }
+            }
+            if (count > 0) {
+              stationWeather.set(code, {
+                windSpeed: sumWind / count,
+                windGust: sumGust / count,
+                solarRadiation: sumSolar / count,
+                cloudCover: sumCloud / count,
+                temperature: sumTemp / count
+              });
+            }
+          }
+        }
+
+        if (stationWeather.size === 0) {
+          continue;
+        }
+
+        // Predict for all stations with available weather
+        const predictions = modelRouter.predictAll(trainingStations, stationWeather, datetime);
+        forecasts.push(...predictions);
+      }
+
+      console.log(`   Generated ${forecasts.length} predictions`);
+
+      // Ensure output directory exists
+      const outputDir = dirname(options.output);
+      if (outputDir && !existsSync(outputDir)) {
+        mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Write forecasts
+      await capacityFactorService.writeForecastCSV(
+        forecasts,
+        options.output,
+        trainingStations,
+        (msg) => console.log(`   ${msg}`)
+      );
+
+      console.log(`\n✅ Forecast written to: ${options.output}`);
+      console.log(`   📊 ${forecasts.length} predictions for ${trainingStations.length} stations`);
+      console.log(`   📅 Period: ${options.start} to ${options.end}`);
+
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      if (error.stack) {
+        console.error(error.stack);
+      }
+      process.exit(1);
+    }
+  });
+
+// CFAC EVALUATE - Evaluate capacity factor forecast accuracy
+cfacCommand
+  .command('evaluate')
+  .description('Evaluate capacity factor forecast accuracy against actual data')
+  .requiredOption('-f, --forecast <file>', 'Forecast CSV file to evaluate')
+  .requiredOption('-a, --actual <file>', 'Actual capacity factor CSV file (MRHCFac format)')
+  .option('-o, --output <file>', 'Output evaluation report file')
+  .action(async (options) => {
+    console.log('\n📊 Evaluating Capacity Factor Forecast...\n');
+
+    try {
+      // Parse forecast file
+      const forecastContent = readFileSync(options.forecast, 'utf-8');
+      const forecastRows = parse(forecastContent, { columns: true, skip_empty_lines: true, trim: true });
+
+      // Parse actual capacity factor data
+      const actualData = await capacityFactorService.parseCapacityFactorCSV(
+        options.actual,
+        (msg) => console.log(`  ${msg}`)
+      );
+
+      // Build map of actual CFac by datetime and station
+      const actualMap = new Map<string, number>();
+      for (const record of actualData) {
+        const key = `${record.datetime.getTime()}_${record.stationCode}`;
+        actualMap.set(key, record.capacityFactor);
+      }
+
+      // Compare forecast vs actual
+      interface StationStats {
+        count: number;
+        sumError: number;
+        sumAbsError: number;
+        sumAbsPercentError: number;
+        sumSquaredError: number;
+        type: StationType;
+      }
+
+      const stationStats = new Map<string, StationStats>();
+      let totalMatched = 0;
+      let totalUnmatched = 0;
+
+      for (const row of forecastRows) {
+        // Parse forecast datetime
+        const dt = DateTime.fromFormat(row['DateTimeEnding'], 'M/d/yyyy HH:mm');
+        if (!dt.isValid) {
+          continue;
+        }
+        const datetime = dt.toJSDate();
+
+        // Check each station column
+        for (const col of Object.keys(row)) {
+          if (col === 'DateTimeEnding') continue;
+
+          const forecastValue = parseFloat(row[col]);
+          if (isNaN(forecastValue)) continue;
+
+          const key = `${datetime.getTime()}_${col}`;
+          const actualValue = actualMap.get(key);
+
+          if (actualValue === undefined) {
+            totalUnmatched++;
+            continue;
+          }
+
+          totalMatched++;
+          const error = forecastValue - actualValue;
+          const absError = Math.abs(error);
+          const percentError = actualValue > 0.01 ? (absError / actualValue) * 100 : 0;
+
+          if (!stationStats.has(col)) {
+            stationStats.set(col, {
+              count: 0,
+              sumError: 0,
+              sumAbsError: 0,
+              sumAbsPercentError: 0,
+              sumSquaredError: 0,
+              type: getStationTypeFromCode(col)
+            });
+          }
+
+          const stats = stationStats.get(col)!;
+          stats.count++;
+          stats.sumError += error;
+          stats.sumAbsError += absError;
+          stats.sumAbsPercentError += percentError;
+          stats.sumSquaredError += error * error;
+        }
+      }
+
+      if (totalMatched === 0) {
+        console.error('❌ No matching records found between forecast and actual data');
+        process.exit(1);
+      }
+
+      // Calculate and display metrics
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('              CAPACITY FACTOR FORECAST EVALUATION              ');
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      console.log(`Matched Records: ${totalMatched}`);
+      console.log(`Unmatched Forecast Records: ${totalUnmatched}\n`);
+
+      // Group by type for summary
+      const typeStats = new Map<string, { mae: number; mape: number; count: number; stations: number }>();
+
+      console.log('┌─────────────────┬──────────┬──────────┬──────────┬──────────┐');
+      console.log('│     Station     │   MAE    │   MAPE   │   RMSE   │  Count   │');
+      console.log('├─────────────────┼──────────┼──────────┼──────────┼──────────┤');
+
+      let reportContent = '# Capacity Factor Forecast Evaluation\n\n';
+      reportContent += `Generated: ${DateTime.now().toISO()}\n\n`;
+      reportContent += `## Summary\n\n`;
+      reportContent += `- Forecast File: ${options.forecast}\n`;
+      reportContent += `- Actual File: ${options.actual}\n`;
+      reportContent += `- Matched Records: ${totalMatched}\n`;
+      reportContent += `- Unmatched Records: ${totalUnmatched}\n\n`;
+      reportContent += '## Metrics by Station\n\n';
+      reportContent += '| Station | Type | MAE | MAPE (%) | RMSE | Count |\n';
+      reportContent += '|---------|------|-----|----------|------|-------|\n';
+
+      for (const [station, stats] of stationStats) {
+        const mae = stats.sumAbsError / stats.count;
+        const mape = stats.sumAbsPercentError / stats.count;
+        const rmse = Math.sqrt(stats.sumSquaredError / stats.count);
+
+        // Display (truncate station name if needed)
+        const displayName = station.length > 15 ? station.substring(0, 12) + '...' : station;
+        console.log(`│ ${displayName.padEnd(15)} │ ${mae.toFixed(4).padStart(8)} │ ${mape.toFixed(2).padStart(7)}% │ ${rmse.toFixed(4).padStart(8)} │ ${stats.count.toString().padStart(8)} │`);
+
+        reportContent += `| ${station} | ${stats.type} | ${mae.toFixed(4)} | ${mape.toFixed(2)} | ${rmse.toFixed(4)} | ${stats.count} |\n`;
+
+        // Aggregate by type
+        const typeKey = stats.type;
+        if (!typeStats.has(typeKey)) {
+          typeStats.set(typeKey, { mae: 0, mape: 0, count: 0, stations: 0 });
+        }
+        const ts = typeStats.get(typeKey)!;
+        ts.mae += mae;
+        ts.mape += mape;
+        ts.count += stats.count;
+        ts.stations++;
+      }
+
+      console.log('└─────────────────┴──────────┴──────────┴──────────┴──────────┘');
+
+      // Type summary
+      console.log('\n📊 Summary by Station Type:\n');
+      console.log('┌─────────────────┬──────────┬──────────┬──────────┐');
+      console.log('│   Station Type  │ Stations │ Avg MAE  │ Avg MAPE │');
+      console.log('├─────────────────┼──────────┼──────────┼──────────┤');
+
+      reportContent += '\n## Summary by Station Type\n\n';
+      reportContent += '| Type | Stations | Avg MAE | Avg MAPE (%) |\n';
+      reportContent += '|------|----------|---------|---------------|\n';
+
+      for (const [type, ts] of typeStats) {
+        const avgMae = ts.mae / ts.stations;
+        const avgMape = ts.mape / ts.stations;
+        console.log(`│ ${type.padEnd(15)} │ ${ts.stations.toString().padStart(8)} │ ${avgMae.toFixed(4).padStart(8)} │ ${avgMape.toFixed(2).padStart(7)}% │`);
+        reportContent += `| ${type} | ${ts.stations} | ${avgMae.toFixed(4)} | ${avgMape.toFixed(2)} |\n`;
+      }
+
+      console.log('└─────────────────┴──────────┴──────────┴──────────┘');
+
+      // Interpretation
+      console.log('\n💡 Interpretation:');
+      console.log('  • MAE (Mean Absolute Error): Average absolute deviation from actual');
+      console.log('  • MAPE (Mean Absolute Percentage Error): Percentage deviation');
+      console.log('  • Values are capacity factors (0.0 to 1.0)');
+
+      reportContent += '\n## Interpretation\n\n';
+      reportContent += '- **MAE** (Mean Absolute Error): Average absolute deviation from actual capacity factor\n';
+      reportContent += '- **MAPE** (Mean Absolute Percentage Error): Percentage deviation from actual\n';
+      reportContent += '- Values represent capacity factors (0.0 to 1.0)\n';
+
+      // Write report if output specified
+      if (options.output) {
+        const outputDir = dirname(options.output);
+        if (outputDir && !existsSync(outputDir)) {
+          mkdirSync(outputDir, { recursive: true });
+        }
+        writeFileSync(options.output, reportContent);
+        console.log(`\n📄 Report written to: ${options.output}`);
+      }
+
+      console.log('\n✅ Evaluation complete!');
+
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// CFAC INFO - Show information about capacity factor data
+cfacCommand
+  .command('info')
+  .description('Display information about capacity factor data files')
+  .requiredOption('-d, --data <path>', 'Capacity factor CSV file or directory')
+  .option('--stations <file>', 'Stations JSON file', 'src/data/stations.json')
+  .action(async (options) => {
+    console.log('\n📊 Capacity Factor Data Information\n');
+
+    try {
+      // Load station metadata
+      await capacityFactorService.loadStations(options.stations);
+
+      // Parse capacity factor data
+      const cfacData = await capacityFactorService.parseCapacityFactorDirectory(
+        options.data,
+        (msg) => console.log(`  ${msg}`)
+      );
+
+      // Get unique stations
+      const stationCodes = capacityFactorService.getStationCodes(cfacData);
+
+      // Get date range
+      const sorted = [...cfacData].sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+      const startDate = sorted[0].datetime;
+      const endDate = sorted[sorted.length - 1].datetime;
+
+      console.log('\n═══════════════════════════════════════════════════════════════');
+      console.log(`  Path: ${options.data}`);
+      console.log(`  Total Records: ${cfacData.length.toLocaleString()}`);
+      console.log(`  Stations: ${stationCodes.length}`);
+      console.log(`  Date Range: ${DateTime.fromJSDate(startDate).toISO()} to ${DateTime.fromJSDate(endDate).toISO()}`);
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      // Group by type
+      const byType = new Map<string, string[]>();
+      for (const code of stationCodes) {
+        const type = getStationTypeFromCode(code);
+        if (!byType.has(type)) {
+          byType.set(type, []);
+        }
+        byType.get(type)!.push(code);
+      }
+
+      console.log('📋 Stations by Type:\n');
+      for (const [type, codes] of byType) {
+        console.log(`  ${type} (${codes.length}):`);
+        for (const code of codes.slice(0, 10)) {
+          const stats = capacityFactorService.getStationStatistics(cfacData, code);
+          if (stats) {
+            console.log(`    ${code}: mean=${stats.mean.toFixed(3)}, min=${stats.min.toFixed(3)}, max=${stats.max.toFixed(3)} (${stats.count} records)`);
+          }
+        }
+        if (codes.length > 10) {
+          console.log(`    ... and ${codes.length - 10} more`);
+        }
+        console.log('');
+      }
+
+      console.log('✅ Info complete!');
+
     } catch (error: any) {
       console.error(`\n❌ Error: ${error.message}`);
       process.exit(1);

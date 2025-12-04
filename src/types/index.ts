@@ -1,3 +1,6 @@
+// Export capacity factor types
+export * from './capacityFactor.js';
+
 // Weather data from CSV (raw hourly)
 export interface RawWeatherData {
   name: string;
@@ -7,8 +10,10 @@ export interface RawWeatherData {
   temp: number;
   dew: number;
   precip: number;
+  humidity?: number;
   windgust: number;
   windspeed: number;
+  winddir?: number;
   cloudcover: number;
   solarradiation: number;
   solarenergy: number;

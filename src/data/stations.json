@@ -937,6 +937,734 @@
         "longitude": 124.6833
       },
       "grid": "CMIN"
+    },
+    "01CRUZDAN_S_B": {
+      "name": "Cruz Dañan Solar/Battery",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "San Manuel",
+        "province": "Pangasinan",
+        "region": "Region I",
+        "latitude": 15.8667,
+        "longitude": 120.6167
+      },
+      "grid": "CLUZ"
+    },
+    "01DUHAT": {
+      "name": "Duhat Biomass Power Plant",
+      "type": "biomass",
+      "operator": "HyperGreen Energy Corporation",
+      "capacity_mw": 12,
+      "location": {
+        "municipality": "Duhat",
+        "province": "Nueva Ecija",
+        "region": "Region III",
+        "latitude": 15.4867,
+        "longitude": 120.9672
+      },
+      "grid": "CLUZ"
+    },
+    "01GAMU": {
+      "name": "Gamu Biomass Power Plant",
+      "type": "biomass",
+      "operator": "Cagayan Biomass Energy Corporation",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Gamu",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 17.050,
+        "longitude": 121.833
+      },
+      "grid": "CLUZ"
+    },
+    "01GAMU_BG": {
+      "name": "Gamu Biogas",
+      "type": "biomass",
+      "operator": "Green Future Innovations Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Gamu",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 17.050,
+        "longitude": 121.833
+      },
+      "grid": "CLUZ"
+    },
+    "01GAMU_BL": {
+      "name": "Gamu Biomass",
+      "type": "biomass",
+      "operator": "Isabela La Suerte Rice Mill Corporation",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Gamu",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 17.050,
+        "longitude": 121.833
+      },
+      "grid": "CLUZ"
+    },
+    "01GAMU_S": {
+      "name": "Gamu Solar",
+      "type": "solar",
+      "operator": "Megasol Energy 1 Inc.",
+      "capacity_mw": 56.578,
+      "location": {
+        "municipality": "Gamu",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 17.050,
+        "longitude": 121.833
+      },
+      "grid": "CLUZ"
+    },
+    "01MEXICO_S_A": {
+      "name": "Mexico Solar Section A",
+      "type": "solar",
+      "operator": "RASLAG Corp.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mexico",
+        "province": "Pampanga",
+        "region": "Region III",
+        "latitude": 15.067,
+        "longitude": 120.717
+      },
+      "grid": "CLUZ"
+    },
+    "01MEXICO_S_R": {
+      "name": "Mexico Solar Section R",
+      "type": "solar",
+      "operator": "RASLAG Corp.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mexico",
+        "province": "Pampanga",
+        "region": "Region III",
+        "latitude": 15.067,
+        "longitude": 120.717
+      },
+      "grid": "CLUZ"
+    },
+    "01SJSOLAR": {
+      "name": "San Jose Solar Power Plant",
+      "type": "solar",
+      "operator": "San Jose Green Energy Corporation",
+      "capacity_mw": 19.613,
+      "location": {
+        "municipality": "San Jose City",
+        "province": "Nueva Ecija",
+        "region": "Region III",
+        "latitude": 15.7889,
+        "longitude": 120.9906
+      },
+      "grid": "CLUZ"
+    },
+    "01SNMANUEL_S": {
+      "name": "San Manuel Solar",
+      "type": "solar",
+      "operator": "RE Resources Inc.",
+      "capacity_mw": 92.545,
+      "location": {
+        "municipality": "San Manuel",
+        "province": "Pangasinan",
+        "region": "Region I",
+        "latitude": 15.8667,
+        "longitude": 120.6167
+      },
+      "grid": "CLUZ"
+    },
+    "01SNMARCELINO": {
+      "name": "San Marcelino Solar Power Plant",
+      "type": "solar",
+      "operator": "Santa Cruz Solar Energy Inc.",
+      "capacity_mw": 384.71,
+      "location": {
+        "municipality": "San Marcelino",
+        "province": "Zambales",
+        "region": "Region III",
+        "latitude": 14.967,
+        "longitude": 120.150
+      },
+      "grid": "CLUZ"
+    },
+    "01SNRAFAEL": {
+      "name": "San Rafael Solar/Biomass",
+      "type": "solar",
+      "operator": "Powersource First Bulacan Solar Inc.",
+      "capacity_mw": 80.923,
+      "location": {
+        "municipality": "San Rafael",
+        "province": "Bulacan",
+        "region": "Region III",
+        "latitude": 14.9500,
+        "longitude": 120.9500
+      },
+      "grid": "CLUZ"
+    },
+    "01SNTGO_B": {
+      "name": "Santiago Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santiago City",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 16.6833,
+        "longitude": 121.5500
+      },
+      "grid": "CLUZ"
+    },
+    "01TGEGARAO_S": {
+      "name": "Tuguegarao Solar",
+      "type": "solar",
+      "operator": "NAREDCO Corporation",
+      "capacity_mw": 133.464,
+      "location": {
+        "municipality": "Tuguegarao City",
+        "province": "Cagayan",
+        "region": "Region II",
+        "latitude": 17.617,
+        "longitude": 121.717
+      },
+      "grid": "CLUZ"
+    },
+    "02DOLORES": {
+      "name": "Dolores Renewable",
+      "type": "solar",
+      "operator": "PH Renewables Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Dolores",
+        "province": "Quezon",
+        "region": "Region IV-A",
+        "latitude": 14.0167,
+        "longitude": 121.4333
+      },
+      "grid": "CLUZ"
+    },
+    "02DOLORES_S": {
+      "name": "Dolores Solar",
+      "type": "solar",
+      "operator": "PH Renewables Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Dolores",
+        "province": "Quezon",
+        "region": "Region IV-A",
+        "latitude": 14.0167,
+        "longitude": 121.4333
+      },
+      "grid": "CLUZ"
+    },
+    "02DONAIMELDA": {
+      "name": "Doña Imelda Power Plant",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Quezon City",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "latitude": 14.6500,
+        "longitude": 121.0333
+      },
+      "grid": "CLUZ"
+    },
+    "02QUEZON_S_E": {
+      "name": "Quezon Solar E",
+      "type": "solar",
+      "operator": "Ecopark Energy of Valenzuela Corp.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Quezon City",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "latitude": 14.6500,
+        "longitude": 121.0333
+      },
+      "grid": "CLUZ"
+    },
+    "02QUEZON_S_S": {
+      "name": "Quezon Solar S",
+      "type": "solar",
+      "operator": "SM North EDSA Solar",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Quezon City",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "latitude": 14.6500,
+        "longitude": 121.0333
+      },
+      "grid": "CLUZ"
+    },
+    "02QUEZON_S_V": {
+      "name": "Quezon Solar V",
+      "type": "solar",
+      "operator": "Valenzuela Solar Energy Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Valenzuela City",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "latitude": 14.7000,
+        "longitude": 120.9667
+      },
+      "grid": "CLUZ"
+    },
+    "03BACMANGP": {
+      "name": "Bacman Geothermal Power Plant",
+      "type": "geothermal",
+      "operator": "Bac-Man Geothermal Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Sorsogon City",
+        "province": "Sorsogon",
+        "region": "Region V",
+        "latitude": 12.9333,
+        "longitude": 124.0000
+      },
+      "grid": "CLUZ"
+    },
+    "03CALAUAN_H": {
+      "name": "Calauan Hydro",
+      "type": "hydro",
+      "operator": "Philippine Power and Development Company",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calauan",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.150,
+        "longitude": 121.317
+      },
+      "grid": "CLUZ"
+    },
+    "03CLACA": {
+      "name": "Calatagan/Calaca Power",
+      "type": "solar",
+      "operator": "Solar Philippines",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calatagan",
+        "province": "Batangas",
+        "region": "Region IV-A",
+        "latitude": 13.8333,
+        "longitude": 120.6333
+      },
+      "grid": "CLUZ"
+    },
+    "03CLACA_B": {
+      "name": "Calatagan Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calatagan",
+        "province": "Batangas",
+        "region": "Region IV-A",
+        "latitude": 13.8333,
+        "longitude": 120.6333
+      },
+      "grid": "CLUZ"
+    },
+    "03DASMA_S": {
+      "name": "Dasmariñas Solar",
+      "type": "solar",
+      "operator": "Prime Solar Solutions Corp.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Dasmariñas City",
+        "province": "Cavite",
+        "region": "Region IV-A",
+        "latitude": 14.3264,
+        "longitude": 120.9361
+      },
+      "grid": "CLUZ"
+    },
+    "03DASMAEHV": {
+      "name": "Dasmariñas EHV Solar",
+      "type": "solar",
+      "operator": "Majestics Energy Corporation",
+      "capacity_mw": 64.206,
+      "location": {
+        "municipality": "Dasmariñas City",
+        "province": "Cavite",
+        "region": "Region IV-A",
+        "latitude": 14.3264,
+        "longitude": 120.9361
+      },
+      "grid": "CLUZ"
+    },
+    "03LABO": {
+      "name": "Labo Mini Hydro",
+      "type": "hydro",
+      "operator": "Colasi Mini Hydro Corporation",
+      "capacity_mw": 4.0,
+      "location": {
+        "municipality": "Labo",
+        "province": "Camarines Norte",
+        "region": "Region V",
+        "latitude": 14.1500,
+        "longitude": 122.8167
+      },
+      "grid": "CLUZ"
+    },
+    "03LUMBAN_B": {
+      "name": "Lumban Battery",
+      "type": "battery",
+      "operator": "SMGP BESS Power Inc.",
+      "capacity_mw": 57.125,
+      "location": {
+        "municipality": "Lumban",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.2981,
+        "longitude": 121.4600
+      },
+      "grid": "CLUZ"
+    },
+    "03LUMBAN_BL": {
+      "name": "Lumban Battery Large",
+      "type": "battery",
+      "operator": "SMGP BESS Power Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Lumban",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.2981,
+        "longitude": 121.4600
+      },
+      "grid": "CLUZ"
+    },
+    "03MAUBAN_H": {
+      "name": "Mauban Hydro",
+      "type": "hydro",
+      "operator": "Enervantage Suppliers Co. Inc.",
+      "capacity_mw": 1.720,
+      "location": {
+        "municipality": "Mauban",
+        "province": "Quezon",
+        "region": "Region IV-A",
+        "latitude": 14.183,
+        "longitude": 121.717
+      },
+      "grid": "CLUZ"
+    },
+    "03NAGA": {
+      "name": "Naga Renewable",
+      "type": "hydro",
+      "operator": "Bicol Hydropower Corporation",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Naga City",
+        "province": "Camarines Sur",
+        "region": "Region V",
+        "latitude": 13.62,
+        "longitude": 123.17
+      },
+      "grid": "CLUZ"
+    },
+    "03NAGA_B": {
+      "name": "Naga Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Naga City",
+        "province": "Camarines Sur",
+        "region": "Region V",
+        "latitude": 13.62,
+        "longitude": 123.17
+      },
+      "grid": "CLUZ"
+    },
+    "03PALAYAN": {
+      "name": "Palayan Binary Geothermal",
+      "type": "geothermal",
+      "operator": "Bac-Man Geothermal Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Sorsogon City",
+        "province": "Sorsogon",
+        "region": "Region V",
+        "latitude": 12.9333,
+        "longitude": 124.0000
+      },
+      "grid": "CLUZ"
+    },
+    "03STAROSA": {
+      "name": "Santa Rosa Power Plant",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santa Rosa City",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.3167,
+        "longitude": 121.1167
+      },
+      "grid": "CLUZ"
+    },
+    "04CENTRAL": {
+      "name": "Central Visayas Power",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Ormoc City",
+        "province": "Leyte",
+        "region": "Region VIII",
+        "latitude": 11.02,
+        "longitude": 124.62
+      },
+      "grid": "CVIS"
+    },
+    "04PARANAS": {
+      "name": "Paranas Hydro Power",
+      "type": "hydro",
+      "operator": "Taft Hydroenergy Corporation",
+      "capacity_mw": 14.16,
+      "location": {
+        "municipality": "Paranas",
+        "province": "Samar",
+        "region": "Region VIII",
+        "latitude": 11.850,
+        "longitude": 125.117
+      },
+      "grid": "CVIS"
+    },
+    "04PARANAS_S": {
+      "name": "Paranas Solar",
+      "type": "solar",
+      "operator": "Taft Solar Energy Corporation",
+      "capacity_mw": 20.155,
+      "location": {
+        "municipality": "Paranas",
+        "province": "Samar",
+        "region": "Region VIII",
+        "latitude": 11.850,
+        "longitude": 125.117
+      },
+      "grid": "CVIS"
+    },
+    "04TABANGO_S": {
+      "name": "Tabango Solar",
+      "type": "solar",
+      "operator": "San Isidro Solar Power Corp.",
+      "capacity_mw": 120.003,
+      "location": {
+        "municipality": "Tabango",
+        "province": "Leyte",
+        "region": "Region VIII",
+        "latitude": 11.3000,
+        "longitude": 124.0333
+      },
+      "grid": "CVIS"
+    },
+    "05CALUNG": {
+      "name": "Calung/Toledo Solar",
+      "type": "solar",
+      "operator": "Citicore Solar Cebu Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Toledo City",
+        "province": "Cebu",
+        "region": "Region VII",
+        "latitude": 10.38,
+        "longitude": 123.65
+      },
+      "grid": "CVIS"
+    },
+    "06AMLAN_B": {
+      "name": "Amlan Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Amlan",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.4667,
+        "longitude": 123.2833
+      },
+      "grid": "CVIS"
+    },
+    "06BACOLOD_B": {
+      "name": "Bacolod Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Bacolod City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.6765,
+        "longitude": 122.9509
+      },
+      "grid": "CVIS"
+    },
+    "06BACOLOD_G": {
+      "name": "Bacolod Geothermal",
+      "type": "geothermal",
+      "operator": "Energy Development Corporation",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Bacolod City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.6765,
+        "longitude": 122.9509
+      },
+      "grid": "CVIS"
+    },
+    "06CALASOL": {
+      "name": "Calatrava Solar Power Plant",
+      "type": "solar",
+      "operator": "Aboitiz Solar Power Inc.",
+      "capacity_mw": 137.4,
+      "location": {
+        "municipality": "Calatrava",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.600,
+        "longitude": 123.483
+      },
+      "grid": "CVIS"
+    },
+    "07CORELLA": {
+      "name": "Corella Power Plant",
+      "type": "hydro",
+      "operator": "SPC Island Power Corporation",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Corella",
+        "province": "Bohol",
+        "region": "Region VII",
+        "latitude": 9.68,
+        "longitude": 123.92
+      },
+      "grid": "CVIS"
+    },
+    "07UBAY_S": {
+      "name": "Ubay Solar",
+      "type": "solar",
+      "operator": "Dagohoy Green Energy Corporation",
+      "capacity_mw": 27.121,
+      "location": {
+        "municipality": "Ubay",
+        "province": "Bohol",
+        "region": "Region VII",
+        "latitude": 10.05,
+        "longitude": 124.47
+      },
+      "grid": "CVIS"
+    },
+    "08DINGLE_BI": {
+      "name": "Dingle Biomass",
+      "type": "biomass",
+      "operator": "Central Azucarera de San Antonio",
+      "capacity_mw": 8.0,
+      "location": {
+        "municipality": "Dingle",
+        "province": "Iloilo",
+        "region": "Region VI",
+        "latitude": 11.050,
+        "longitude": 122.667
+      },
+      "grid": "CVIS"
+    },
+    "08STBARBRA_H": {
+      "name": "Santa Barbara Hydro",
+      "type": "hydro",
+      "operator": "Sunwest Water and Electric Company 2 Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santa Barbara",
+        "province": "Iloilo",
+        "region": "Region VI",
+        "latitude": 10.883,
+        "longitude": 122.483
+      },
+      "grid": "CVIS"
+    },
+    "11JASAA": {
+      "name": "Jasaan Hydro Power Plant",
+      "type": "hydro",
+      "operator": "FG Bukidnon Power Corporation",
+      "capacity_mw": 1.6,
+      "location": {
+        "municipality": "Jasaan",
+        "province": "Misamis Oriental",
+        "region": "Region X",
+        "latitude": 8.650,
+        "longitude": 124.750
+      },
+      "grid": "CMIN"
+    },
+    "11MANOL": {
+      "name": "Manolo Fortich Hydro",
+      "type": "hydro",
+      "operator": "Hedcor Bukidnon Inc.",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Manolo Fortich",
+        "province": "Bukidnon",
+        "region": "Region X",
+        "latitude": 8.367,
+        "longitude": 124.867
+      },
+      "grid": "CMIN"
+    },
+    "11MARAN_BI": {
+      "name": "Maramag Biomass",
+      "type": "biomass",
+      "operator": "Crystal Sugar Company Inc.",
+      "capacity_mw": 14.9,
+      "location": {
+        "municipality": "Maramag",
+        "province": "Bukidnon",
+        "region": "Region X",
+        "latitude": 7.7625,
+        "longitude": 125.0069
+      },
+      "grid": "CMIN"
+    },
+    "14SULTA_H": {
+      "name": "Sultan Kudarat Hydro",
+      "type": "hydro",
+      "operator": "Euro Hydro Power Asia Holdings Inc.",
+      "capacity_mw": 3.0,
+      "location": {
+        "municipality": "Sultan Kudarat",
+        "province": "Maguindanao",
+        "region": "BARMM",
+        "latitude": 7.233,
+        "longitude": 124.250
+      },
+      "grid": "CMIN"
+    },
+    "14TACUR_BI": {
+      "name": "Tacurong Biomass",
+      "type": "biomass",
+      "operator": "Biotech Farms Incorporated",
+      "capacity_mw": 5.96,
+      "location": {
+        "municipality": "Tacurong City",
+        "province": "Sultan Kudarat",
+        "region": "Region XII",
+        "latitude": 6.683,
+        "longitude": 124.667
+      },
+      "grid": "CMIN"
     }
   },
   "weatherMapping": {
@@ -944,7 +1672,7 @@
     "clusterGroups": {
       "ILOCOS_NORTE_WIND": {
         "description": "Wind farms in Ilocos Norte (Burgos, Pagudpud, Bangui area)",
-        "stations": ["01BURGOS", "01PAGUDPUD", "01PASUQUIN", "01CURIMAO", "01LAOAG"],
+        "stations": ["01BURGOS", "01PAGUDPUD", "01PASUQUIN", "01CURIMAO", "01LAOAG", "01LAOAG_S"],
         "referenceLocation": {
           "name": "Burgos, Ilocos Norte",
           "latitude": 18.5340,
@@ -960,18 +1688,81 @@
           "longitude": 120.5839
         }
       },
+      "CAGAYAN_ISABELA": {
+        "description": "Solar/Biomass plants in Cagayan Valley",
+        "stations": ["01GAMU", "01GAMU_BG", "01GAMU_BL", "01GAMU_S", "01TGEGARAO_S", "01SNTGO", "01SNTGO_S", "01SNTGO_B"],
+        "referenceLocation": {
+          "name": "Gamu, Isabela",
+          "latitude": 17.050,
+          "longitude": 121.833
+        }
+      },
       "PAMPANGA_SOLAR": {
         "description": "Solar plants in Pampanga/Central Luzon",
-        "stations": ["01CLARK", "01MEXICO_S", "01MEXICO_BI"],
+        "stations": ["01CLARK", "01MEXICO_S", "01MEXICO_BI", "01MEXICO_S_A", "01MEXICO_S_R"],
         "referenceLocation": {
-          "name": "Clark, Pampanga",
-          "latitude": 15.2132,
-          "longitude": 120.4896
+          "name": "Mexico, Pampanga",
+          "latitude": 15.067,
+          "longitude": 120.717
+        }
+      },
+      "NUEVA_ECIJA_SOLAR": {
+        "description": "Solar/Biomass plants in Nueva Ecija",
+        "stations": ["01CBNTUAN_S", "01CBNTUAN_BI", "01SJSOLAR", "01DUHAT", "01PANTABA"],
+        "referenceLocation": {
+          "name": "San Jose City, Nueva Ecija",
+          "latitude": 15.7889,
+          "longitude": 120.9906
+        }
+      },
+      "PANGASINAN_SOLAR": {
+        "description": "Solar plants in Pangasinan",
+        "stations": ["01CAYANGA", "01SNMANUEL_S", "01CRUZDAN_S_B"],
+        "referenceLocation": {
+          "name": "San Manuel, Pangasinan",
+          "latitude": 15.8667,
+          "longitude": 120.6167
+        }
+      },
+      "ZAMBALES_SOLAR": {
+        "description": "Solar plants in Zambales",
+        "stations": ["01BOTOLAN", "01SBMA", "01SNMARCELINO"],
+        "referenceLocation": {
+          "name": "San Marcelino, Zambales",
+          "latitude": 14.967,
+          "longitude": 120.150
+        }
+      },
+      "BULACAN_SOLAR": {
+        "description": "Solar plants in Bulacan",
+        "stations": ["01SNRAFAEL"],
+        "referenceLocation": {
+          "name": "San Rafael, Bulacan",
+          "latitude": 14.9500,
+          "longitude": 120.9500
+        }
+      },
+      "NCR_SOLAR": {
+        "description": "Solar plants in Metro Manila",
+        "stations": ["02DOLORES", "02DOLORES_S", "02DONAIMELDA", "02QUEZON_S_E", "02QUEZON_S_S", "02QUEZON_S_V"],
+        "referenceLocation": {
+          "name": "Quezon City",
+          "latitude": 14.6500,
+          "longitude": 121.0333
+        }
+      },
+      "CAVITE_SOLAR": {
+        "description": "Solar plants in Cavite",
+        "stations": ["03DASMA_S", "03DASMAEHV"],
+        "referenceLocation": {
+          "name": "Dasmariñas City, Cavite",
+          "latitude": 14.3264,
+          "longitude": 120.9361
         }
       },
       "BATANGAS_SOLAR": {
         "description": "Solar plants in Batangas",
-        "stations": ["03CLACA_S", "03CALACA"],
+        "stations": ["03CLACA_S", "03CALACA", "03CLACA", "03CLACA_B"],
         "referenceLocation": {
           "name": "Calatagan, Batangas",
           "latitude": 13.8333,
@@ -979,35 +1770,71 @@
         }
       },
       "LAGUNA_RENEWABLE": {
-        "description": "Renewable plants in Laguna/Batangas border",
-        "stations": ["03CALAMBA", "03CALAUAN", "03LUMBAN", "03MKBAN-A_S"],
+        "description": "Renewable plants in Laguna",
+        "stations": ["03CALAMBA", "03CALAUAN", "03CALAUAN_H", "03LUMBAN", "03LUMBAN_B", "03LUMBAN_BL", "03MKBAN-A_S", "03STAROSA"],
         "referenceLocation": {
-          "name": "Calauan, Laguna",
-          "latitude": 14.1500,
-          "longitude": 121.3167
+          "name": "Lumban, Laguna",
+          "latitude": 14.2981,
+          "longitude": 121.4600
         }
       },
-      "ALBAY_GEOTHERMAL": {
-        "description": "Geothermal plants in Albay",
-        "stations": ["03TIWI-C"],
+      "QUEZON_HYDRO": {
+        "description": "Hydro plants in Quezon Province",
+        "stations": ["03MAUBAN_H"],
         "referenceLocation": {
-          "name": "Tiwi, Albay",
-          "latitude": 13.4655,
-          "longitude": 123.6486
+          "name": "Mauban, Quezon",
+          "latitude": 14.183,
+          "longitude": 121.717
+        }
+      },
+      "BICOL_GEOTHERMAL": {
+        "description": "Geothermal plants in Bicol region",
+        "stations": ["03TIWI-C", "03BACMANGP", "03PALAYAN"],
+        "referenceLocation": {
+          "name": "Sorsogon City",
+          "latitude": 12.9333,
+          "longitude": 124.0000
+        }
+      },
+      "BICOL_HYDRO": {
+        "description": "Hydro/Biomass plants in Bicol",
+        "stations": ["03NAGA", "03NAGA_B", "03LABO"],
+        "referenceLocation": {
+          "name": "Naga City, Camarines Sur",
+          "latitude": 13.62,
+          "longitude": 123.17
+        }
+      },
+      "SAMAR_RENEWABLE": {
+        "description": "Hydro/Solar plants in Samar",
+        "stations": ["04PARANAS", "04PARANAS_S", "04CENTRAL"],
+        "referenceLocation": {
+          "name": "Paranas, Samar",
+          "latitude": 11.850,
+          "longitude": 125.117
         }
       },
       "LEYTE_GEOTHERMAL": {
         "description": "Geothermal plants in Leyte",
-        "stations": ["04ORMOC_GP", "04TONGONA"],
+        "stations": ["04ORMOC_GP", "04TONGONA", "04ORMOC_S", "04TABANGO_S"],
         "referenceLocation": {
           "name": "Kananga, Leyte",
           "latitude": 11.1528,
           "longitude": 124.7083
         }
       },
+      "CEBU_SOLAR": {
+        "description": "Solar plants in Cebu",
+        "stations": ["05CALUNG"],
+        "referenceLocation": {
+          "name": "Toledo City, Cebu",
+          "latitude": 10.38,
+          "longitude": 123.65
+        }
+      },
       "NEGROS_SOLAR": {
         "description": "Solar plants in Negros",
-        "stations": ["06CADIZ", "06CADIZ_S", "06HELIOS", "06BACOLOD_S", "06MABINAY"],
+        "stations": ["06CADIZ", "06CADIZ_S", "06HELIOS", "06BACOLOD_S", "06MABINAY", "06CALASOL", "06AMLAN_S", "06BACOLOD_B", "06BACOLOD_G"],
         "referenceLocation": {
           "name": "Cadiz City, Negros Occidental",
           "latitude": 10.9240,
@@ -1023,6 +1850,33 @@
           "longitude": 123.2500
         }
       },
+      "NEGROS_HYDRO": {
+        "description": "Hydro/Biomass plants in Negros",
+        "stations": ["06AMLAN", "06AMLAN_B", "06KABANKALAN"],
+        "referenceLocation": {
+          "name": "Amlan, Negros Oriental",
+          "latitude": 9.4667,
+          "longitude": 123.2833
+        }
+      },
+      "BOHOL_RENEWABLE": {
+        "description": "Solar/Hydro plants in Bohol",
+        "stations": ["07CORELLA", "07UBAY_S"],
+        "referenceLocation": {
+          "name": "Ubay, Bohol",
+          "latitude": 10.05,
+          "longitude": 124.47
+        }
+      },
+      "ILOILO_RENEWABLE": {
+        "description": "Biomass/Hydro plants in Iloilo",
+        "stations": ["08DINGLE_BI", "08STBARBRA_W", "08STBARBRA_S", "08STBARBRA_H"],
+        "referenceLocation": {
+          "name": "Santa Barbara, Iloilo",
+          "latitude": 10.883,
+          "longitude": 122.483
+        }
+      },
       "AKLAN_WIND": {
         "description": "Wind farm in Aklan",
         "stations": ["08NABAS_W", "08NABAS_H"],
@@ -1034,25 +1888,43 @@
       },
       "ILIGAN_HYDRO": {
         "description": "Agus hydroelectric complex",
-        "stations": ["10AGUS6_LIAN"],
+        "stations": ["10AGUS6_LIAN", "10GNPK"],
         "referenceLocation": {
           "name": "Iligan City, Lanao del Norte",
           "latitude": 8.1846,
           "longitude": 124.1928
         }
       },
-      "DAVAO_SOLAR": {
-        "description": "Solar plants in Davao region",
-        "stations": ["13DAVAO", "13MATAN_S"],
+      "BUKIDNON_RENEWABLE": {
+        "description": "Hydro/Solar/Biomass plants in Bukidnon",
+        "stations": ["11KIBAW", "11MANOL", "11MARAN_BI", "11JASAA", "11TAGOL_H", "11TAGOL_S"],
+        "referenceLocation": {
+          "name": "Manolo Fortich, Bukidnon",
+          "latitude": 8.367,
+          "longitude": 124.867
+        }
+      },
+      "AGUSAN_HYDRO": {
+        "description": "Hydro plants in Agusan",
+        "stations": ["12BUTUA"],
+        "referenceLocation": {
+          "name": "Butuan City",
+          "latitude": 8.95,
+          "longitude": 125.53
+        }
+      },
+      "DAVAO_RENEWABLE": {
+        "description": "Solar/Hydro plants in Davao region",
+        "stations": ["13DAVAO", "13MATAN_S", "13NABUN", "14SIGHYDRO"],
         "referenceLocation": {
           "name": "Davao City",
           "latitude": 7.0731,
           "longitude": 125.6128
         }
       },
-      "GENSAN_SOLAR": {
-        "description": "Solar plants in General Santos area",
-        "stations": ["14GENSA_S", "14TACUR_S"],
+      "SOCCSKSARGEN_RENEWABLE": {
+        "description": "Solar/Hydro/Biomass plants in SOCCSKSARGEN",
+        "stations": ["14GENSA_S", "14TACUR_S", "14TACUR_H", "14TACUR_BI", "14KIDAP_B", "14SULTA", "14SULTA_H"],
         "referenceLocation": {
           "name": "General Santos City",
           "latitude": 6.1164,
