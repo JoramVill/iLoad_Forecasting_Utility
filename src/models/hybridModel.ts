@@ -4,6 +4,28 @@ import { FEATURE_NAMES } from '../constants/index.js';
 import MultivariateLinearRegression from 'ml-regression-multivariate-linear';
 
 /**
+ * Time period definitions for different demand drivers
+ */
+enum TimePeriod {
+  NIGHT = 'night',           // 0-5: Base load, low variation
+  MORNING_RAMP = 'morning',  // 6-9: Wake-up patterns
+  MIDDAY = 'midday',         // 10-16: Temperature/cooling dominant
+  EVENING_PEAK = 'evening',  // 17-22: Residential surge
+  LATE_NIGHT = 'late'        // 23: Transition
+}
+
+/**
+ * Get time period for a given hour
+ */
+function getTimePeriod(hour: number): TimePeriod {
+  if (hour >= 0 && hour <= 5) return TimePeriod.NIGHT;
+  if (hour >= 6 && hour <= 9) return TimePeriod.MORNING_RAMP;
+  if (hour >= 10 && hour <= 16) return TimePeriod.MIDDAY;
+  if (hour >= 17 && hour <= 22) return TimePeriod.EVENING_PEAK;
+  return TimePeriod.LATE_NIGHT;
+}
+
+/**
  * Statistical profile for a specific hour/daytype combination
  */
 interface StatisticalBounds {
@@ -15,14 +37,29 @@ interface StatisticalBounds {
   // Temperature-demand relationship for this hour
   tempCoefficient: number; // How much demand changes per degree C
   baseTemp: number; // Reference temperature for the profile
+  // Time period for this hour
+  timePeriod: TimePeriod;
 }
+
+/**
+ * Time-period specific scaling factors
+ * Controls how much temperature affects demand in each period
+ */
+const TEMP_SENSITIVITY: Record<TimePeriod, number> = {
+  [TimePeriod.NIGHT]: 0.3,        // Low temp sensitivity at night
+  [TimePeriod.MORNING_RAMP]: 0.5, // Moderate during morning ramp
+  [TimePeriod.MIDDAY]: 1.0,       // Full temp sensitivity (cooling load)
+  [TimePeriod.EVENING_PEAK]: 0.4, // Lower - residential patterns dominate
+  [TimePeriod.LATE_NIGHT]: 0.3    // Low temp sensitivity
+};
 
 /**
  * Hybrid Interpolation Model
  *
- * Combines statistical profiles (Min/Median/Max) with ML-predicted position.
+ * Combines statistical profiles (Min/Median/Max) with time-period aware adjustments.
  * - Builds dynamic bounds from recent similar days (same daytype/hour)
- * - ML predicts where within the range demand should fall (0-1, can exceed)
+ * - Uses different temperature sensitivity per time period
+ * - Evening peak modeled separately from temperature-driven midday
  * - Optional growth factor to adjust bounds for trending demand
  */
 export class HybridModel {
@@ -108,6 +145,11 @@ export class HybridModel {
       // Positive means higher temp = higher demand (cooling load)
       const tempCoefficient = varTemp > 0 ? covTempDemand / varTemp : 0;
 
+      // Extract hour from key (format: region_hour_daytype)
+      const keyParts = key.split('_');
+      const hour = parseInt(keyParts[1], 10);
+      const timePeriod = getTimePeriod(hour);
+
       this.profiles.set(key, {
         min,
         median,
@@ -115,7 +157,8 @@ export class HybridModel {
         count: demands.length,
         recentDays,
         tempCoefficient,
-        baseTemp
+        baseTemp,
+        timePeriod
       });
     }
   }
@@ -283,24 +326,42 @@ export class HybridModel {
   }
 
   /**
-   * Interpolate using profile median with temperature adjustment
-   * This preserves the hourly shape better than ML position prediction
+   * Interpolate using profile median with time-period aware adjustments
+   * Different time periods have different demand drivers
    */
   private interpolate(features: FeatureVector, profile: StatisticalBounds): number {
     // Start with the median demand for this hour/daytype
     let prediction = profile.median;
 
-    // Apply temperature adjustment
-    // Adjust demand based on how current temp differs from historical average
+    // Get time-period specific temperature sensitivity
+    const tempSensitivity = TEMP_SENSITIVITY[profile.timePeriod];
+
+    // Apply temperature adjustment scaled by time period sensitivity
+    // Midday: full temperature effect (cooling load)
+    // Evening: reduced effect (residential patterns dominate)
     const tempDeviation = features.temp - profile.baseTemp;
-    const tempAdjustment = profile.tempCoefficient * tempDeviation;
+    const tempAdjustment = profile.tempCoefficient * tempDeviation * tempSensitivity;
     prediction += tempAdjustment;
+
+    // Evening peak boost based on daylight/time patterns
+    // Residential demand surges independent of temperature
+    if (profile.timePeriod === TimePeriod.EVENING_PEAK) {
+      // Look at the median's position relative to midday
+      // Evening typically higher than late afternoon due to residential surge
+      // The profile already captures this, but we reinforce it
+      const hour = features.hour;
+
+      // Peak hours are typically 19-21 (7pm-9pm)
+      if (hour >= 19 && hour <= 21) {
+        // Small boost to ensure we capture the evening peak
+        const peakBoost = 1.02; // 2% boost for peak evening hours
+        prediction *= peakBoost;
+      }
+    }
 
     // Use lag-based adjustment for recent trend
     // If demand was higher/lower than normal recently, adjust accordingly
-    if (features.demandLag24h !== undefined) {
-      // Get the profile for 24 hours ago (same hour, could be different day type)
-      // For simplicity, use the current profile's median as reference
+    if (features.demandLag24h !== undefined && profile.median > 0) {
       const lag24hRatio = features.demandLag24h / profile.median;
       // Apply a small adjustment based on recent trend (±10% max)
       const trendAdjustment = Math.max(-0.1, Math.min(0.1, lag24hRatio - 1));
