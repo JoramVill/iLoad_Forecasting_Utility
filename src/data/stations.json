@@ -1,0 +1,1064 @@
+{
+  "metadata": {
+    "description": "WESM Must-Run/Renewable Power Station Reference Data",
+    "version": "1.0.0",
+    "lastUpdated": "2025-12-04",
+    "sources": [
+      "Global Energy Monitor (gem.wiki)",
+      "Global Energy Observatory (globalenergyobservatory.org)",
+      "Wikipedia",
+      "Philippine Department of Energy",
+      "Power Technology"
+    ],
+    "notes": "Station codes follow WESM naming convention. Suffix indicates type: _S=Solar, _W=Wind, _H=Hydro, _BI=Biomass, _B=Battery, _G=Geothermal. First 2 digits indicate grid region."
+  },
+  "stations": {
+    "01BAKUN": {
+      "name": "Bakun AC Hydro",
+      "type": "hydro",
+      "operator": "Hedcor (AboitizPower)",
+      "capacity_mw": 70,
+      "location": {
+        "municipality": "Bakun",
+        "province": "Benguet",
+        "region": "CAR",
+        "latitude": 16.8512,
+        "longitude": 120.5839
+      },
+      "grid": "CLUZ",
+      "commissioned": 2001
+    },
+    "01BOTOLAN": {
+      "name": "Botolan Solar/Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Botolan",
+        "province": "Zambales",
+        "region": "Region III",
+        "latitude": 15.2889,
+        "longitude": 120.0256
+      },
+      "grid": "CLUZ"
+    },
+    "01BURGOS": {
+      "name": "Burgos Wind Farm",
+      "type": "wind",
+      "operator": "EDC Burgos Wind Power Corporation",
+      "capacity_mw": 150,
+      "location": {
+        "municipality": "Burgos",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.5340,
+        "longitude": 120.6479
+      },
+      "grid": "CLUZ",
+      "commissioned": 2014,
+      "turbines": 50,
+      "turbine_model": "Vestas V90 3MW"
+    },
+    "01BYOMBNG": {
+      "name": "Bayombong",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Bayombong",
+        "province": "Nueva Vizcaya",
+        "region": "Region II",
+        "latitude": 16.4833,
+        "longitude": 121.1500
+      },
+      "grid": "CLUZ"
+    },
+    "01CAYANGA": {
+      "name": "Cayanga Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Unknown",
+        "province": "Pangasinan",
+        "region": "Region I",
+        "latitude": 16.0000,
+        "longitude": 120.3000
+      },
+      "grid": "CLUZ"
+    },
+    "01CBNTUAN_BI": {
+      "name": "Cabanatuan Biomass",
+      "type": "biomass",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Cabanatuan",
+        "province": "Nueva Ecija",
+        "region": "Region III",
+        "latitude": 15.4867,
+        "longitude": 120.9672
+      },
+      "grid": "CLUZ"
+    },
+    "01CBNTUAN_S": {
+      "name": "Cabanatuan Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Cabanatuan",
+        "province": "Nueva Ecija",
+        "region": "Region III",
+        "latitude": 15.4867,
+        "longitude": 120.9672
+      },
+      "grid": "CLUZ"
+    },
+    "01CLARK": {
+      "name": "Clark Solar Power Plant",
+      "type": "solar",
+      "operator": "Citicore/Sindicatum",
+      "capacity_mw": 22.326,
+      "location": {
+        "municipality": "Mabalacat City",
+        "province": "Pampanga",
+        "region": "Region III",
+        "latitude": 15.2132,
+        "longitude": 120.4896
+      },
+      "grid": "CLUZ",
+      "commissioned": 2016
+    },
+    "01CNCEPCN_BI": {
+      "name": "Concepcion Biomass",
+      "type": "biomass",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Concepcion",
+        "province": "Tarlac",
+        "region": "Region III",
+        "latitude": 15.3256,
+        "longitude": 120.6539
+      },
+      "grid": "CLUZ"
+    },
+    "01CNCEPCN_S": {
+      "name": "Concepcion Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Concepcion",
+        "province": "Tarlac",
+        "region": "Region III",
+        "latitude": 15.3256,
+        "longitude": 120.6539
+      },
+      "grid": "CLUZ"
+    },
+    "01CURIMAO": {
+      "name": "Curimao Wind",
+      "type": "wind",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Currimao",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.0167,
+        "longitude": 120.4833
+      },
+      "grid": "CLUZ"
+    },
+    "01HERMOSA": {
+      "name": "Hermosa Hydro/Solar",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Hermosa",
+        "province": "Bataan",
+        "region": "Region III",
+        "latitude": 14.8333,
+        "longitude": 120.5000
+      },
+      "grid": "CLUZ"
+    },
+    "01HERMOSA_S": {
+      "name": "Hermosa Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Hermosa",
+        "province": "Bataan",
+        "region": "Region III",
+        "latitude": 14.8333,
+        "longitude": 120.5000
+      },
+      "grid": "CLUZ"
+    },
+    "01LAOAG": {
+      "name": "Laoag Wind/Hydro",
+      "type": "wind",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Laoag City",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.1986,
+        "longitude": 120.5936
+      },
+      "grid": "CLUZ"
+    },
+    "01LAOAG_S": {
+      "name": "Laoag Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Laoag City",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.1986,
+        "longitude": 120.5936
+      },
+      "grid": "CLUZ"
+    },
+    "01LATRINI": {
+      "name": "La Trinidad Hydro",
+      "type": "hydro",
+      "operator": "Hedcor (AboitizPower)",
+      "capacity_mw": 20.4,
+      "location": {
+        "municipality": "La Trinidad",
+        "province": "Benguet",
+        "region": "CAR",
+        "latitude": 16.4561,
+        "longitude": 120.5872
+      },
+      "grid": "CLUZ",
+      "commissioned": 1991
+    },
+    "01LIMAY": {
+      "name": "Limay Power Plant",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Limay",
+        "province": "Bataan",
+        "region": "Region III",
+        "latitude": 14.5617,
+        "longitude": 120.6000
+      },
+      "grid": "CLUZ"
+    },
+    "01MARIVELES_S": {
+      "name": "Mariveles Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mariveles",
+        "province": "Bataan",
+        "region": "Region III",
+        "latitude": 14.4333,
+        "longitude": 120.4833
+      },
+      "grid": "CLUZ"
+    },
+    "01MEXICO_BI": {
+      "name": "Mexico Biomass",
+      "type": "biomass",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mexico",
+        "province": "Pampanga",
+        "region": "Region III",
+        "latitude": 15.0667,
+        "longitude": 120.7167
+      },
+      "grid": "CLUZ"
+    },
+    "01MEXICO_S": {
+      "name": "Mexico Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mexico",
+        "province": "Pampanga",
+        "region": "Region III",
+        "latitude": 15.0667,
+        "longitude": 120.7167
+      },
+      "grid": "CLUZ"
+    },
+    "01PAGUDPUD": {
+      "name": "Pagudpud Wind Farm (Caparispisan)",
+      "type": "wind",
+      "operator": "North Luzon Renewables",
+      "capacity_mw": 81,
+      "location": {
+        "municipality": "Pagudpud",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.5500,
+        "longitude": 120.8167
+      },
+      "grid": "CLUZ",
+      "turbines": 27
+    },
+    "01PANTABA": {
+      "name": "Pantabangan Hydro",
+      "type": "hydro",
+      "operator": "First Gen",
+      "capacity_mw": 112,
+      "location": {
+        "municipality": "Pantabangan",
+        "province": "Nueva Ecija",
+        "region": "Region III",
+        "latitude": 15.8167,
+        "longitude": 121.1333
+      },
+      "grid": "CLUZ"
+    },
+    "01PASUQUIN": {
+      "name": "Pasuquin Wind",
+      "type": "wind",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Pasuquin",
+        "province": "Ilocos Norte",
+        "region": "Region I",
+        "latitude": 18.3386,
+        "longitude": 120.6430
+      },
+      "grid": "CLUZ"
+    },
+    "01SBMA": {
+      "name": "Subic Bay Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Subic Bay Freeport",
+        "province": "Zambales",
+        "region": "Region III",
+        "latitude": 14.7944,
+        "longitude": 120.2833
+      },
+      "grid": "CLUZ"
+    },
+    "01SNTGO": {
+      "name": "Santiago Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santiago City",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 16.6833,
+        "longitude": 121.5500
+      },
+      "grid": "CLUZ"
+    },
+    "01SNTGO_S": {
+      "name": "Santiago Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santiago City",
+        "province": "Isabela",
+        "region": "Region II",
+        "latitude": 16.6833,
+        "longitude": 121.5500
+      },
+      "grid": "CLUZ"
+    },
+    "03CALACA": {
+      "name": "Calaca Power Plant",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calaca",
+        "province": "Batangas",
+        "region": "Region IV-A",
+        "latitude": 13.9333,
+        "longitude": 120.8167
+      },
+      "grid": "CLUZ"
+    },
+    "03CALAMBA": {
+      "name": "Calamba Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calamba City",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.2117,
+        "longitude": 121.1653
+      },
+      "grid": "CLUZ"
+    },
+    "03CALAUAN": {
+      "name": "Calauan Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calauan",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.1500,
+        "longitude": 121.3167
+      },
+      "grid": "CLUZ"
+    },
+    "03CLACA_S": {
+      "name": "Calatagan Solar Farm",
+      "type": "solar",
+      "operator": "Solar Philippines",
+      "capacity_mw": 63.3,
+      "location": {
+        "municipality": "Calatagan",
+        "province": "Batangas",
+        "region": "Region IV-A",
+        "latitude": 13.8333,
+        "longitude": 120.6333
+      },
+      "grid": "CLUZ",
+      "commissioned": 2016
+    },
+    "03LUMBAN": {
+      "name": "Lumban Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Lumban",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.2947,
+        "longitude": 121.4608
+      },
+      "grid": "CLUZ"
+    },
+    "03MKBAN-A_S": {
+      "name": "Makban Solar (MakBan Geothermal Area)",
+      "type": "solar",
+      "operator": "AP Renewables",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Calauan",
+        "province": "Laguna",
+        "region": "Region IV-A",
+        "latitude": 14.0881,
+        "longitude": 121.2264
+      },
+      "grid": "CLUZ"
+    },
+    "03TIWI-C": {
+      "name": "Tiwi Geothermal",
+      "type": "geothermal",
+      "operator": "AP Renewables",
+      "capacity_mw": 234,
+      "location": {
+        "municipality": "Tiwi",
+        "province": "Albay",
+        "region": "Region V",
+        "latitude": 13.4655,
+        "longitude": 123.6486
+      },
+      "grid": "CLUZ",
+      "commissioned": 1979
+    },
+    "04ORMOC_GP": {
+      "name": "Ormoc Geothermal (Tongonan)",
+      "type": "geothermal",
+      "operator": "EDC",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Ormoc City",
+        "province": "Leyte",
+        "region": "Region VIII",
+        "latitude": 11.1000,
+        "longitude": 124.6500
+      },
+      "grid": "CVIS"
+    },
+    "04ORMOC_S": {
+      "name": "Ormoc Solar",
+      "type": "solar",
+      "operator": "First Soleq Energy Corp",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Ormoc City",
+        "province": "Leyte",
+        "region": "Region VIII",
+        "latitude": 11.0869,
+        "longitude": 124.6338
+      },
+      "grid": "CVIS"
+    },
+    "04TONGONA": {
+      "name": "Tongonan Geothermal",
+      "type": "geothermal",
+      "operator": "EDC",
+      "capacity_mw": 726,
+      "location": {
+        "municipality": "Kananga/Ormoc",
+        "province": "Leyte",
+        "region": "Region VIII",
+        "latitude": 11.1528,
+        "longitude": 124.7083
+      },
+      "grid": "CVIS",
+      "commissioned": 1983
+    },
+    "06AMLAN": {
+      "name": "Amlan Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Amlan",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.4667,
+        "longitude": 123.2833
+      },
+      "grid": "CVIS"
+    },
+    "06AMLAN_S": {
+      "name": "Amlan Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Amlan",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.4667,
+        "longitude": 123.2833
+      },
+      "grid": "CVIS"
+    },
+    "06BACOLOD_S": {
+      "name": "Bacolod Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Bacolod City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.6765,
+        "longitude": 122.9509
+      },
+      "grid": "CVIS"
+    },
+    "06CADIZ": {
+      "name": "Cadiz Solar Power Plant (Helios)",
+      "type": "solar",
+      "operator": "Vena Energy",
+      "capacity_mw": 132.5,
+      "location": {
+        "municipality": "Cadiz City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.9240,
+        "longitude": 123.2972
+      },
+      "grid": "CVIS",
+      "commissioned": 2016
+    },
+    "06CADIZ_S": {
+      "name": "Cadiz Solar (Additional)",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Cadiz City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.9240,
+        "longitude": 123.2972
+      },
+      "grid": "CVIS"
+    },
+    "06HELIOS": {
+      "name": "Helios Solar (Cadiz)",
+      "type": "solar",
+      "operator": "Vena Energy",
+      "capacity_mw": 132.5,
+      "location": {
+        "municipality": "Cadiz City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 10.9240,
+        "longitude": 123.2972
+      },
+      "grid": "CVIS",
+      "commissioned": 2016
+    },
+    "06KABANKALAN": {
+      "name": "Kabankalan Power Plant",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Kabankalan City",
+        "province": "Negros Occidental",
+        "region": "Region VI",
+        "latitude": 9.9900,
+        "longitude": 122.8150
+      },
+      "grid": "CVIS"
+    },
+    "06MABINAY": {
+      "name": "Mabinay Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Mabinay",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.7278,
+        "longitude": 122.9287
+      },
+      "grid": "CVIS"
+    },
+    "06PGPP1": {
+      "name": "Palinpinon Geothermal 1",
+      "type": "geothermal",
+      "operator": "EDC",
+      "capacity_mw": 192.5,
+      "location": {
+        "municipality": "Valencia",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.2833,
+        "longitude": 123.2500
+      },
+      "grid": "CVIS"
+    },
+    "06PGPP2": {
+      "name": "Palinpinon Geothermal 2",
+      "type": "geothermal",
+      "operator": "EDC",
+      "capacity_mw": 80,
+      "location": {
+        "municipality": "Valencia",
+        "province": "Negros Oriental",
+        "region": "Region VII",
+        "latitude": 9.2833,
+        "longitude": 123.2500
+      },
+      "grid": "CVIS"
+    },
+    "08NABAS_W": {
+      "name": "Nabas Wind Farm",
+      "type": "wind",
+      "operator": "PetroWind Energy Inc.",
+      "capacity_mw": 36,
+      "location": {
+        "municipality": "Nabas",
+        "province": "Aklan",
+        "region": "Region VI",
+        "latitude": 11.8794,
+        "longitude": 121.9859
+      },
+      "grid": "CVIS",
+      "commissioned": 2015,
+      "turbines": 18
+    },
+    "08NABAS_H": {
+      "name": "Nabas Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Nabas",
+        "province": "Aklan",
+        "region": "Region VI",
+        "latitude": 11.8333,
+        "longitude": 122.0167
+      },
+      "grid": "CVIS"
+    },
+    "08STBARBRA_W": {
+      "name": "Santa Barbara Wind",
+      "type": "wind",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santa Barbara",
+        "province": "Iloilo",
+        "region": "Region VI",
+        "latitude": 10.8167,
+        "longitude": 122.5333
+      },
+      "grid": "CVIS"
+    },
+    "08STBARBRA_S": {
+      "name": "Santa Barbara Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Santa Barbara",
+        "province": "Iloilo",
+        "region": "Region VI",
+        "latitude": 10.8167,
+        "longitude": 122.5333
+      },
+      "grid": "CVIS"
+    },
+    "10AGUS6_LIAN": {
+      "name": "Agus 6 (Maria Cristina) Hydro",
+      "type": "hydro",
+      "operator": "National Power Corporation",
+      "capacity_mw": 200,
+      "location": {
+        "municipality": "Iligan City",
+        "province": "Lanao del Norte",
+        "region": "Region X",
+        "latitude": 8.1846,
+        "longitude": 124.1928
+      },
+      "grid": "CMIN",
+      "commissioned": 1953
+    },
+    "10GNPK": {
+      "name": "Gen-Pak Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Unknown",
+        "province": "Northern Mindanao",
+        "region": "Region X",
+        "latitude": 8.0000,
+        "longitude": 124.0000
+      },
+      "grid": "CMIN"
+    },
+    "11KIBAW": {
+      "name": "Kibawe Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Kibawe",
+        "province": "Bukidnon",
+        "region": "Region X",
+        "latitude": 7.5667,
+        "longitude": 124.9833
+      },
+      "grid": "CMIN"
+    },
+    "11TAGOL_H": {
+      "name": "Tagoloan Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Tagoloan",
+        "province": "Misamis Oriental",
+        "region": "Region X",
+        "latitude": 8.5333,
+        "longitude": 124.7500
+      },
+      "grid": "CMIN"
+    },
+    "11TAGOL_S": {
+      "name": "Tagoloan Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Tagoloan",
+        "province": "Misamis Oriental",
+        "region": "Region X",
+        "latitude": 8.5333,
+        "longitude": 124.7500
+      },
+      "grid": "CMIN"
+    },
+    "12BUTUA": {
+      "name": "Butuan Power Plant",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Butuan City",
+        "province": "Agusan del Norte",
+        "region": "Region XIII",
+        "latitude": 8.9475,
+        "longitude": 125.5406
+      },
+      "grid": "CMIN"
+    },
+    "13DAVAO": {
+      "name": "Davao Power Plant",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Davao City",
+        "province": "Davao del Sur",
+        "region": "Region XI",
+        "latitude": 7.0731,
+        "longitude": 125.6128
+      },
+      "grid": "CMIN"
+    },
+    "13MATAN_S": {
+      "name": "Matanao Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Matanao",
+        "province": "Davao del Sur",
+        "region": "Region XI",
+        "latitude": 6.7333,
+        "longitude": 125.2500
+      },
+      "grid": "CMIN"
+    },
+    "13NABUN": {
+      "name": "Nabunturan Power Plant",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Nabunturan",
+        "province": "Davao de Oro",
+        "region": "Region XI",
+        "latitude": 7.6069,
+        "longitude": 125.9664
+      },
+      "grid": "CMIN"
+    },
+    "14GENSA_S": {
+      "name": "General Santos Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "General Santos City",
+        "province": "South Cotabato",
+        "region": "Region XII",
+        "latitude": 6.1164,
+        "longitude": 125.1716
+      },
+      "grid": "CMIN"
+    },
+    "14KIDAP_B": {
+      "name": "Kidapawan Battery",
+      "type": "battery",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Kidapawan City",
+        "province": "Cotabato",
+        "region": "Region XII",
+        "latitude": 7.0083,
+        "longitude": 125.0894
+      },
+      "grid": "CMIN"
+    },
+    "14SIGHYDRO": {
+      "name": "Sibulan Hydro (SIGHYDRO)",
+      "type": "hydro",
+      "operator": "Hedcor",
+      "capacity_mw": 42.5,
+      "location": {
+        "municipality": "Sibulan",
+        "province": "Davao del Sur",
+        "region": "Region XI",
+        "latitude": 6.9833,
+        "longitude": 125.4500
+      },
+      "grid": "CMIN"
+    },
+    "14SULTA": {
+      "name": "Sultan Kudarat Power Plant",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Sultan Kudarat",
+        "province": "Maguindanao",
+        "region": "BARMM",
+        "latitude": 7.2333,
+        "longitude": 124.2500
+      },
+      "grid": "CMIN"
+    },
+    "14TACUR_H": {
+      "name": "Tacurong Hydro",
+      "type": "hydro",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Tacurong City",
+        "province": "Sultan Kudarat",
+        "region": "Region XII",
+        "latitude": 6.6833,
+        "longitude": 124.6833
+      },
+      "grid": "CMIN"
+    },
+    "14TACUR_S": {
+      "name": "Tacurong Solar",
+      "type": "solar",
+      "operator": "Unknown",
+      "capacity_mw": null,
+      "location": {
+        "municipality": "Tacurong City",
+        "province": "Sultan Kudarat",
+        "region": "Region XII",
+        "latitude": 6.6833,
+        "longitude": 124.6833
+      },
+      "grid": "CMIN"
+    }
+  },
+  "weatherMapping": {
+    "notes": "For Visual Crossing API, use latitude/longitude directly or the city name. Group nearby stations to reduce API calls.",
+    "clusterGroups": {
+      "ILOCOS_NORTE_WIND": {
+        "description": "Wind farms in Ilocos Norte (Burgos, Pagudpud, Bangui area)",
+        "stations": ["01BURGOS", "01PAGUDPUD", "01PASUQUIN", "01CURIMAO", "01LAOAG"],
+        "referenceLocation": {
+          "name": "Burgos, Ilocos Norte",
+          "latitude": 18.5340,
+          "longitude": 120.6479
+        }
+      },
+      "BENGUET_HYDRO": {
+        "description": "Hydroelectric plants in Benguet",
+        "stations": ["01BAKUN", "01LATRINI"],
+        "referenceLocation": {
+          "name": "Bakun, Benguet",
+          "latitude": 16.8512,
+          "longitude": 120.5839
+        }
+      },
+      "PAMPANGA_SOLAR": {
+        "description": "Solar plants in Pampanga/Central Luzon",
+        "stations": ["01CLARK", "01MEXICO_S", "01MEXICO_BI"],
+        "referenceLocation": {
+          "name": "Clark, Pampanga",
+          "latitude": 15.2132,
+          "longitude": 120.4896
+        }
+      },
+      "BATANGAS_SOLAR": {
+        "description": "Solar plants in Batangas",
+        "stations": ["03CLACA_S", "03CALACA"],
+        "referenceLocation": {
+          "name": "Calatagan, Batangas",
+          "latitude": 13.8333,
+          "longitude": 120.6333
+        }
+      },
+      "LAGUNA_RENEWABLE": {
+        "description": "Renewable plants in Laguna/Batangas border",
+        "stations": ["03CALAMBA", "03CALAUAN", "03LUMBAN", "03MKBAN-A_S"],
+        "referenceLocation": {
+          "name": "Calauan, Laguna",
+          "latitude": 14.1500,
+          "longitude": 121.3167
+        }
+      },
+      "ALBAY_GEOTHERMAL": {
+        "description": "Geothermal plants in Albay",
+        "stations": ["03TIWI-C"],
+        "referenceLocation": {
+          "name": "Tiwi, Albay",
+          "latitude": 13.4655,
+          "longitude": 123.6486
+        }
+      },
+      "LEYTE_GEOTHERMAL": {
+        "description": "Geothermal plants in Leyte",
+        "stations": ["04ORMOC_GP", "04TONGONA"],
+        "referenceLocation": {
+          "name": "Kananga, Leyte",
+          "latitude": 11.1528,
+          "longitude": 124.7083
+        }
+      },
+      "NEGROS_SOLAR": {
+        "description": "Solar plants in Negros",
+        "stations": ["06CADIZ", "06CADIZ_S", "06HELIOS", "06BACOLOD_S", "06MABINAY"],
+        "referenceLocation": {
+          "name": "Cadiz City, Negros Occidental",
+          "latitude": 10.9240,
+          "longitude": 123.2972
+        }
+      },
+      "NEGROS_GEOTHERMAL": {
+        "description": "Geothermal plants in Negros Oriental",
+        "stations": ["06PGPP1", "06PGPP2"],
+        "referenceLocation": {
+          "name": "Valencia, Negros Oriental",
+          "latitude": 9.2833,
+          "longitude": 123.2500
+        }
+      },
+      "AKLAN_WIND": {
+        "description": "Wind farm in Aklan",
+        "stations": ["08NABAS_W", "08NABAS_H"],
+        "referenceLocation": {
+          "name": "Nabas, Aklan",
+          "latitude": 11.8794,
+          "longitude": 121.9859
+        }
+      },
+      "ILIGAN_HYDRO": {
+        "description": "Agus hydroelectric complex",
+        "stations": ["10AGUS6_LIAN"],
+        "referenceLocation": {
+          "name": "Iligan City, Lanao del Norte",
+          "latitude": 8.1846,
+          "longitude": 124.1928
+        }
+      },
+      "DAVAO_SOLAR": {
+        "description": "Solar plants in Davao region",
+        "stations": ["13DAVAO", "13MATAN_S"],
+        "referenceLocation": {
+          "name": "Davao City",
+          "latitude": 7.0731,
+          "longitude": 125.6128
+        }
+      },
+      "GENSAN_SOLAR": {
+        "description": "Solar plants in General Santos area",
+        "stations": ["14GENSA_S", "14TACUR_S"],
+        "referenceLocation": {
+          "name": "General Santos City",
+          "latitude": 6.1164,
+          "longitude": 125.1716
+        }
+      }
+    }
+  }
+}
