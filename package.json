@@ -1,0 +1,38 @@
+{
+  "name": "iload-forecasting",
+  "version": "1.0.0",
+  "description": "Load Forecasting Utility with XGBoost and Multi-Variable Weather Data",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "iload": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node --esm src/index.ts"
+  },
+  "keywords": [
+    "forecasting",
+    "xgboost",
+    "weather",
+    "load-forecasting"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "csv-parse": "^5.5.6",
+    "csv-stringify": "^6.4.6",
+    "luxon": "^3.4.4",
+    "commander": "^11.1.0",
+    "ml-regression-multivariate-linear": "^2.0.3",
+    "@fractal-solutions/xgboost-js": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.6",
+    "@types/luxon": "^3.4.2",
+    "ts-node": "^10.9.2"
+  }
+}
