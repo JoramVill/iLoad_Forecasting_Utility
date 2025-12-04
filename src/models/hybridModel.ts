@@ -12,6 +12,9 @@ interface StatisticalBounds {
   max: number;
   count: number;
   recentDays: Array<{ date: string; demand: number; temp: number }>;
+  // Temperature-demand relationship for this hour
+  tempCoefficient: number; // How much demand changes per degree C
+  baseTemp: number; // Reference temperature for the profile
 }
 
 /**
@@ -86,12 +89,33 @@ export class HybridModel {
       const max = demands[p95Index];
       const median = demands[medianIndex];
 
+      // Calculate temperature-demand relationship for this hour/daytype
+      // Simple linear regression: demand = baseValue + tempCoeff * (temp - baseTemp)
+      const temps = records.map(r => r.temp);
+      const baseTemp = temps.reduce((sum, t) => sum + t, 0) / temps.length;
+
+      // Calculate temperature coefficient using covariance
+      let covTempDemand = 0;
+      let varTemp = 0;
+      const meanDemand = demands.reduce((sum, d) => sum + d, 0) / demands.length;
+
+      for (const r of records) {
+        covTempDemand += (r.temp - baseTemp) * (r.demand - meanDemand);
+        varTemp += (r.temp - baseTemp) * (r.temp - baseTemp);
+      }
+
+      // Temperature coefficient (MW per degree C)
+      // Positive means higher temp = higher demand (cooling load)
+      const tempCoefficient = varTemp > 0 ? covTempDemand / varTemp : 0;
+
       this.profiles.set(key, {
         min,
         median,
         max,
         count: demands.length,
-        recentDays
+        recentDays,
+        tempCoefficient,
+        baseTemp
       });
     }
   }
@@ -259,19 +283,32 @@ export class HybridModel {
   }
 
   /**
-   * Interpolate using ML-predicted position
+   * Interpolate using profile median with temperature adjustment
+   * This preserves the hourly shape better than ML position prediction
    */
   private interpolate(features: FeatureVector, profile: StatisticalBounds): number {
-    const featureValues = this.extractPositionFeatures(features, profile);
-    const positionPrediction = this.model!.predict([featureValues]);
-    // positionPrediction is a 2D array: [[position]] - extract the scalar value
-    let position = positionPrediction[0][0];
+    // Start with the median demand for this hour/daytype
+    let prediction = profile.median;
 
-    // Clamp position to [0, 1] range - no extrapolation beyond historical bounds
-    position = Math.max(0, Math.min(1, position));
+    // Apply temperature adjustment
+    // Adjust demand based on how current temp differs from historical average
+    const tempDeviation = features.temp - profile.baseTemp;
+    const tempAdjustment = profile.tempCoefficient * tempDeviation;
+    prediction += tempAdjustment;
 
-    // Linear interpolation: demand = min + position * (max - min)
-    const prediction = profile.min + position * (profile.max - profile.min);
+    // Use lag-based adjustment for recent trend
+    // If demand was higher/lower than normal recently, adjust accordingly
+    if (features.demandLag24h !== undefined) {
+      // Get the profile for 24 hours ago (same hour, could be different day type)
+      // For simplicity, use the current profile's median as reference
+      const lag24hRatio = features.demandLag24h / profile.median;
+      // Apply a small adjustment based on recent trend (±10% max)
+      const trendAdjustment = Math.max(-0.1, Math.min(0.1, lag24hRatio - 1));
+      prediction *= (1 + trendAdjustment * 0.5); // Dampen the effect
+    }
+
+    // Clamp to min/max bounds to preserve the hourly shape
+    prediction = Math.max(profile.min, Math.min(profile.max, prediction));
 
     // Ensure non-negative predictions
     return Math.max(0, prediction);
