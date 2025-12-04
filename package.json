@@ -21,18 +21,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fractal-solutions/xgboost-js": "^1.0.0",
     "axios": "^1.6.2",
+    "better-sqlite3": "^12.5.0",
+    "commander": "^11.1.0",
     "csv-parse": "^5.5.6",
     "csv-stringify": "^6.4.6",
     "luxon": "^3.4.4",
-    "commander": "^11.1.0",
-    "ml-regression-multivariate-linear": "^2.0.3",
-    "@fractal-solutions/xgboost-js": "^1.0.0"
+    "ml-regression-multivariate-linear": "^2.0.3"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/luxon": "^3.4.2",
-    "ts-node": "^10.9.2"
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

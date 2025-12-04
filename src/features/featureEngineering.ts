@@ -55,17 +55,64 @@ function extractTemporalFeatures(datetime: Date): {
   isHolidayFlag: number;
   dayOfMonth: number;
   month: number;
+  // Cyclical hour encoding
+  hourSin: number;
+  hourCos: number;
+  // Day-type features
+  isWorkday: number;
+  isSaturday: number;
+  isSunday: number;
+  // Hour one-hot encoding (24 features) - lets model learn each hour's profile
+  hourBins: number[];
+  // Hour-DayType interaction terms (allows different profiles per day type)
+  hourWorkday: number;  // hour value when workday, else 0
+  hourSaturday: number; // hour value when saturday, else 0
+  hourSunday: number;   // hour value when sunday, else 0
 } {
   const dt = DateTime.fromJSDate(datetime);
-  const dayOfWeek = dt.weekday % 7; // 0=Sunday, 1=Monday, etc.
+  const hour = dt.hour;
+  const dayOfWeek = dt.weekday % 7; // 0=Sunday, 1=Monday, etc. (Luxon: 1=Mon, 7=Sun)
+  const isHolidayFlag = isHoliday(datetime) ? 1 : 0;
+
+  // Determine day types
+  const isSunday = dayOfWeek === 0 ? 1 : 0;
+  const isSaturday = dayOfWeek === 6 ? 1 : 0;
+  const isWeekend = (isSunday || isSaturday) ? 1 : 0;
+  // Workday = Mon-Fri AND not a holiday
+  const isWorkday = (!isWeekend && !isHolidayFlag) ? 1 : 0;
+
+  // Cyclical hour encoding (preserves circular nature: hour 23 is close to hour 0)
+  const hourRadians = (2 * Math.PI * hour) / 24;
+  const hourSin = Math.sin(hourRadians);
+  const hourCos = Math.cos(hourRadians);
+
+  // Hour one-hot encoding - creates 24 binary features (hour_0 through hour_23)
+  // This allows the model to learn the exact demand pattern for each hour
+  const hourBins = Array(24).fill(0);
+  hourBins[hour] = 1;
+
+  // Hour-DayType interactions (simple version)
+  // These let the model learn different hourly values per day type
+  const hourWorkday = hour * isWorkday;
+  const hourSaturday = hour * isSaturday;
+  const hourSunday = hour * isSunday;
 
   return {
-    hour: dt.hour,
+    hour,
     dayOfWeek,
-    isWeekend: (dayOfWeek === 0 || dayOfWeek === 6) ? 1 : 0,
-    isHolidayFlag: isHoliday(datetime) ? 1 : 0,
+    isWeekend,
+    isHolidayFlag,
     dayOfMonth: dt.day,
-    month: dt.month
+    month: dt.month,
+    hourSin,
+    hourCos,
+    isWorkday,
+    isSaturday,
+    isSunday,
+    hourBins,
+    hourWorkday,
+    hourSaturday,
+    hourSunday
   };
 }
 
@@ -132,7 +179,7 @@ export function buildFeatureVector(
   );
 
   return {
-    // Temporal
+    // Basic temporal
     hour: temporal.hour,
     dayOfWeek: temporal.dayOfWeek,
     isWeekend: temporal.isWeekend,
@@ -140,8 +187,49 @@ export function buildFeatureVector(
     dayOfMonth: temporal.dayOfMonth,
     month: temporal.month,
 
+    // Cyclical hour encoding
+    hourSin: temporal.hourSin,
+    hourCos: temporal.hourCos,
+
+    // Day type one-hot
+    isWorkday: temporal.isWorkday,
+    isSaturday: temporal.isSaturday,
+    isSunday: temporal.isSunday,
+
+    // Hour one-hot encoding (24 features)
+    hour_0: temporal.hourBins[0],
+    hour_1: temporal.hourBins[1],
+    hour_2: temporal.hourBins[2],
+    hour_3: temporal.hourBins[3],
+    hour_4: temporal.hourBins[4],
+    hour_5: temporal.hourBins[5],
+    hour_6: temporal.hourBins[6],
+    hour_7: temporal.hourBins[7],
+    hour_8: temporal.hourBins[8],
+    hour_9: temporal.hourBins[9],
+    hour_10: temporal.hourBins[10],
+    hour_11: temporal.hourBins[11],
+    hour_12: temporal.hourBins[12],
+    hour_13: temporal.hourBins[13],
+    hour_14: temporal.hourBins[14],
+    hour_15: temporal.hourBins[15],
+    hour_16: temporal.hourBins[16],
+    hour_17: temporal.hourBins[17],
+    hour_18: temporal.hourBins[18],
+    hour_19: temporal.hourBins[19],
+    hour_20: temporal.hourBins[20],
+    hour_21: temporal.hourBins[21],
+    hour_22: temporal.hourBins[22],
+    hour_23: temporal.hourBins[23],
+
+    // Hour-DayType interactions
+    hourWorkday: temporal.hourWorkday,
+    hourSaturday: temporal.hourSaturday,
+    hourSunday: temporal.hourSunday,
+
     // Raw weather
     temp: record.weather.temp,
+    tempSquared: record.weather.temp * record.weather.temp,
     dew: record.weather.dew,
     precip: record.weather.precip,
     windgust: record.weather.windgust,

@@ -10,10 +10,34 @@ export const BASE_TEMP_CELSIUS = 24;
 
 // Feature names for model (order matters for XGBoost)
 export const FEATURE_NAMES = [
+  // Basic temporal
   'hour', 'dayOfWeek', 'isWeekend', 'isHoliday', 'dayOfMonth', 'month',
-  'temp', 'dew', 'precip', 'windgust', 'windspeed', 'cloudcover', 'solarradiation', 'uvindex',
+
+  // Cyclical hour encoding (captures hour patterns without linearity assumption)
+  'hourSin', 'hourCos',
+
+  // Day type one-hot encoding
+  'isWorkday', 'isSaturday', 'isSunday',
+
+  // Hour one-hot encoding (24 features) - lets model learn each hour's demand profile
+  'hour_0', 'hour_1', 'hour_2', 'hour_3', 'hour_4', 'hour_5',
+  'hour_6', 'hour_7', 'hour_8', 'hour_9', 'hour_10', 'hour_11',
+  'hour_12', 'hour_13', 'hour_14', 'hour_15', 'hour_16', 'hour_17',
+  'hour_18', 'hour_19', 'hour_20', 'hour_21', 'hour_22', 'hour_23',
+
+  // Hour-DayType interactions (allows different hourly patterns per day type)
+  'hourWorkday', 'hourSaturday', 'hourSunday',
+
+  // Weather features
+  'temp', 'tempSquared', 'dew', 'precip', 'windgust', 'windspeed', 'cloudcover', 'solarradiation', 'uvindex',
+
+  // Derived weather
   'relativeHumidity', 'heatIndex', 'CDH', 'effectiveSolar', 'apparentTemp', 'isRaining', 'tempDewSpread', 'isDaytime',
+
+  // Lag features
   'demandLag1h', 'demandLag24h', 'demandLag168h', 'tempLag1h', 'tempLag24h',
+
+  // Rolling averages
   'demandRolling24h', 'tempRolling24h', 'tempMax24h'
 ] as const;
 

@@ -3,15 +3,18 @@ import { Command } from 'commander';
 import { DateTime } from 'luxon';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { parse } from 'csv-parse/sync';
 import { parseDemandCsv, parseWeatherCsv } from './parsers/index.js';
 import { mergeData } from './utils/index.js';
 import { buildTrainingSamples, buildFeatureVector } from './features/index.js';
 import { RegressionModel } from './models/regressionModel.js';
 import { XGBoostModel } from './models/xgboostModel.js';
+import { HybridModel } from './models/hybridModel.js';
 import { writeForecastCsv, writeModelReport, writeMetricsSummary } from './writers/index.js';
 import { REGION_MAPPINGS } from './constants/index.js';
 import { ForecastResult, TrainingSample, RawWeatherData } from './types/index.js';
 import { createWeatherService, DEFAULT_LOCATIONS } from './services/index.js';
+import { getDatabase, closeDatabase, DatabaseStats, StoredModel } from './database/index.js';
 
 // Default API key (can be overridden by env or config)
 const DEFAULT_API_KEY = 'BJYBHG8K3YS8EFK46233M8L75';
@@ -52,9 +55,14 @@ program
   .action(async (options) => {
     console.log('\n🔄 Loading data...');
 
-    // Parse demand data
+    // Parse demand data (supports single file or folder)
     const demandData = parseDemandCsv(options.demand);
-    console.log(`  📊 Demand: ${demandData.records.length} records, regions: ${demandData.regions.join(', ')}`);
+    if (demandData.filesProcessed && demandData.filesProcessed > 1) {
+      console.log(`  📊 Demand: ${demandData.records.length} records from ${demandData.filesProcessed} files`);
+    } else {
+      console.log(`  📊 Demand: ${demandData.records.length} records`);
+    }
+    console.log(`     Regions: ${demandData.regions.join(', ')}`);
 
     // Parse weather data
     const weatherDatasets = options.weather.map((file: string) => {
@@ -88,6 +96,10 @@ program
     let regressionResult = null;
     let xgboostResult = null;
 
+    // Get date range for model metadata
+    const trainingStart = DateTime.fromJSDate(demandData.startDate).toISODate()!;
+    const trainingEnd = DateTime.fromJSDate(demandData.endDate).toISODate()!;
+
     // Train Regression model
     if (options.model === 'regression' || options.model === 'both') {
       console.log('\n📈 Training Regression model...');
@@ -97,6 +109,30 @@ program
 
       writeModelReport(regressionResult, `${options.output}/regression_report.md`);
       console.log(`  📄 Report: ${options.output}/regression_report.md`);
+
+      // Save model to database
+      try {
+        const db = getDatabase();
+        const featureNames = regression.getCoefficients().map(c => c.feature);
+        const coefficients = regression.getCoefficientsArray();
+        const modelId = db.saveModel(
+          `Regression ${DateTime.now().toFormat('yyyy-MM-dd HH:mm')}`,
+          'regression',
+          trainingStart,
+          trainingEnd,
+          samples.length,
+          regressionResult.r2Score,
+          regressionResult.mape,
+          regressionResult.rmse,
+          regressionResult.mae,
+          coefficients,
+          featureNames
+        );
+        console.log(`  💾 Saved to database (ID: ${modelId})`);
+        closeDatabase();
+      } catch (error: any) {
+        console.warn(`  ⚠️  Could not save to database: ${error.message}`);
+      }
     }
 
     // Train XGBoost model
@@ -113,6 +149,29 @@ program
 
       writeModelReport(xgboostResult, `${options.output}/xgboost_report.md`);
       console.log(`  📄 Report: ${options.output}/xgboost_report.md`);
+
+      // Note: XGBoost model persistence would require serializing trees
+      // For now, we save metrics only
+      try {
+        const db = getDatabase();
+        const modelId = db.saveModel(
+          `XGBoost ${DateTime.now().toFormat('yyyy-MM-dd HH:mm')}`,
+          'xgboost',
+          trainingStart,
+          trainingEnd,
+          samples.length,
+          xgboostResult.r2Score,
+          xgboostResult.mape,
+          xgboostResult.rmse,
+          xgboostResult.mae,
+          [], // XGBoost trees are complex, stored separately if needed
+          []
+        );
+        console.log(`  💾 Saved to database (ID: ${modelId})`);
+        closeDatabase();
+      } catch (error: any) {
+        console.warn(`  ⚠️  Could not save to database: ${error.message}`);
+      }
     }
 
     // Write comparison summary
@@ -132,18 +191,24 @@ program
   .requiredOption('-s, --start <date>', 'Forecast start date (YYYY-MM-DD)')
   .requiredOption('-e, --end <date>', 'Forecast end date (YYYY-MM-DD)')
   .requiredOption('-o, --output <file>', 'Output forecast CSV file')
-  .option('--model <type>', 'Model type: regression or xgboost', 'regression')
+  .option('--model <type>', 'Model type: regression, xgboost, or hybrid', 'regression')
+  .option('--use-saved', 'Use saved model from database instead of training new one')
   .option('--scale <percent>', 'Scale forecast by percentage (e.g., 5 for +5%, -3 for -3%)', '0')
+  .option('--growth <percent>', 'Daily demand growth rate for hybrid model (e.g., 0.01 for 0.01%/day)', '0')
   .option('--cache <dir>', 'Weather cache directory', './weather_cache')
   .action(async (options) => {
     try {
       const apiKey = getApiKey();
       const weatherService = createWeatherService(apiKey, options.cache);
 
-      // Parse demand data
+      // Parse demand data (supports single file or folder)
       console.log('\n🔄 Loading demand data...');
       const demandData = parseDemandCsv(options.demand);
-      console.log(`  📊 Demand: ${demandData.records.length} records`);
+      if (demandData.filesProcessed && demandData.filesProcessed > 1) {
+        console.log(`  📊 Demand: ${demandData.records.length} records from ${demandData.filesProcessed} files`);
+      } else {
+        console.log(`  📊 Demand: ${demandData.records.length} records`);
+      }
       console.log(`  📅 Range: ${DateTime.fromJSDate(demandData.startDate).toISODate()} to ${DateTime.fromJSDate(demandData.endDate).toISODate()}`);
 
       // Determine training date range (use all historical demand data)
@@ -178,18 +243,56 @@ program
         process.exit(1);
       }
 
-      // Train model
-      console.log(`\n🎯 Training ${options.model} model...`);
-      let model: RegressionModel | XGBoostModel;
+      // Train or load model
+      let model: RegressionModel | XGBoostModel | HybridModel = new RegressionModel(); // Initialize to avoid TS error
+      let usedSavedModel = false;
 
-      if (options.model === 'regression') {
-        model = new RegressionModel();
-        const result = (model as RegressionModel).train(samples);
-        console.log(`  R² = ${result.r2Score.toFixed(4)}, MAPE = ${result.mape.toFixed(2)}%`);
-      } else {
-        model = new XGBoostModel();
-        const result = await (model as XGBoostModel).train(samples);
-        console.log(`  R² = ${result.r2Score.toFixed(4)}, MAPE = ${result.mape.toFixed(2)}%`);
+      if (options.useSaved && options.model === 'regression') {
+        // Try to load saved model from database
+        console.log('\n💾 Loading saved model from database...');
+        try {
+          const db = getDatabase();
+          const savedModel = db.getActiveModel('regression');
+          closeDatabase();
+
+          if (savedModel && savedModel.coefficients.length > 0) {
+            model = new RegressionModel();
+            (model as RegressionModel).loadFromSerialized({
+              coefficients: savedModel.coefficients,
+              featureNames: savedModel.featureNames,
+              intercept: 0
+            });
+            usedSavedModel = true;
+            console.log(`  ✅ Loaded model ID ${savedModel.id}`);
+            console.log(`  📊 Training R² = ${savedModel.r2Score.toFixed(4)}, MAPE = ${savedModel.mape.toFixed(2)}%`);
+            console.log(`  📅 Trained on: ${savedModel.trainingStart} to ${savedModel.trainingEnd}`);
+          } else {
+            console.log('  ⚠️  No saved regression model found, training new one...');
+          }
+        } catch (error: any) {
+          console.warn(`  ⚠️  Could not load saved model: ${error.message}`);
+        }
+      }
+
+      if (!usedSavedModel) {
+        console.log(`\n🎯 Training ${options.model} model...`);
+        if (options.model === 'regression') {
+          model = new RegressionModel();
+          const result = (model as RegressionModel).train(samples);
+          console.log(`  R² = ${result.r2Score.toFixed(4)}, MAPE = ${result.mape.toFixed(2)}%`);
+        } else if (options.model === 'hybrid') {
+          const growthRate = parseFloat(options.growth) / 100; // Convert percent to decimal
+          model = new HybridModel({ growthFactor: growthRate, recentDaysCount: 7 });
+          const result = await (model as HybridModel).train(samples);
+          console.log(`  R² = ${result.r2Score.toFixed(4)}, MAPE = ${result.mape.toFixed(2)}%`);
+          if (growthRate > 0) {
+            console.log(`  📈 Growth factor: ${(growthRate * 100).toFixed(4)}% per day`);
+          }
+        } else {
+          model = new XGBoostModel();
+          const result = await (model as XGBoostModel).train(samples);
+          console.log(`  R² = ${result.r2Score.toFixed(4)}, MAPE = ${result.mape.toFixed(2)}%`);
+        }
       }
 
       // Fetch weather data for forecast period
@@ -209,15 +312,44 @@ program
       const demandHistory = new Map<string, number>();
       const lastKnownDemand = new Map<string, { value: number; ts: number }>();
 
-      for (const record of merged.records) {
-        const key = `${record.datetime.getTime()}_${record.region}`;
-        demandHistory.set(key, record.demand);
+      // Build hourly averages from RAW demand data (not merged) for better fallback
+      // This ensures we have averages even when weather data is missing
+      // Key: "region_hour_daytype" where daytype is 0=workday, 1=saturday, 2=sunday
+      const hourlyAverages = new Map<string, { sum: number; count: number }>();
 
-        // Track the last known demand for each region
+      // First, build hourly averages from ALL raw demand data
+      for (const record of demandData.records) {
+        const dt = DateTime.fromJSDate(record.datetime);
+        const hour = dt.hour;
+        const dow = dt.weekday; // 1=Mon, 7=Sun
+        const dayType = dow === 7 ? 2 : dow === 6 ? 1 : 0; // 0=workday, 1=sat, 2=sun
+        const avgKey = `${record.region}_${hour}_${dayType}`;
+
+        if (!hourlyAverages.has(avgKey)) {
+          hourlyAverages.set(avgKey, { sum: 0, count: 0 });
+        }
+        const avg = hourlyAverages.get(avgKey)!;
+        avg.sum += record.demand;
+        avg.count++;
+
+        // Also track last known from raw demand data
         const lastKnown = lastKnownDemand.get(record.region);
         if (!lastKnown || record.datetime.getTime() > lastKnown.ts) {
           lastKnownDemand.set(record.region, { value: record.demand, ts: record.datetime.getTime() });
         }
+      }
+
+      // Build demand history from RAW demand data first (for better lag coverage)
+      // This ensures we have actual demand values even when weather data is missing
+      for (const record of demandData.records) {
+        const key = `${record.datetime.getTime()}_${record.region}`;
+        demandHistory.set(key, record.demand);
+      }
+
+      // Merged records will overwrite with same values (no harm, just redundant)
+      for (const record of merged.records) {
+        const key = `${record.datetime.getTime()}_${record.region}`;
+        demandHistory.set(key, record.demand);
       }
 
       // Temperature history for lag features
@@ -233,6 +365,111 @@ program
           lastKnownTemp.set(record.region, { value: record.weather.temp, ts: record.datetime.getTime() });
         }
       }
+
+      // Helper function to get typical demand for a given hour and day type
+      const getTypicalDemand = (region: string, datetime: Date): number | undefined => {
+        const dt = DateTime.fromJSDate(datetime);
+        const hour = dt.hour;
+        const dow = dt.weekday;
+        const dayType = dow === 7 ? 2 : dow === 6 ? 1 : 0;
+        const avgKey = `${region}_${hour}_${dayType}`;
+        const avg = hourlyAverages.get(avgKey);
+        if (avg && avg.count > 0) {
+          return avg.sum / avg.count;
+        }
+        return lastKnownDemand.get(region)?.value;
+      };
+
+      // Helper to get typical demand for a specific timestamp (used for lags)
+      const getTypicalDemandForTime = (region: string, timestamp: number): number | undefined => {
+        const dt = DateTime.fromMillis(timestamp);
+        const hour = dt.hour;
+        const dow = dt.weekday;
+        const dayType = dow === 7 ? 2 : dow === 6 ? 1 : 0;
+        const avgKey = `${region}_${hour}_${dayType}`;
+        const avg = hourlyAverages.get(avgKey);
+        if (avg && avg.count > 0) {
+          return avg.sum / avg.count;
+        }
+        return lastKnownDemand.get(region)?.value;
+      };
+
+      // Build an index of historical records by region for efficient lookup
+      // Structure: region -> array of { datetime, hour, dayType, demand, temp }
+      const historicalIndex = new Map<string, Array<{
+        datetime: Date;
+        hour: number;
+        dayType: number;
+        demand: number;
+        temp: number | undefined;
+      }>>();
+
+      for (const record of demandData.records) {
+        const dt = DateTime.fromJSDate(record.datetime);
+        const hour = dt.hour;
+        const dow = dt.weekday;
+        const dayType = dow === 7 ? 2 : dow === 6 ? 1 : 0;
+        const temp = tempHistory.get(`${record.datetime.getTime()}_${record.region}`);
+
+        if (!historicalIndex.has(record.region)) {
+          historicalIndex.set(record.region, []);
+        }
+        historicalIndex.get(record.region)!.push({
+          datetime: record.datetime,
+          hour,
+          dayType,
+          demand: record.demand,
+          temp
+        });
+      }
+
+      // Sort each region's records by datetime descending (most recent first)
+      for (const [, records] of historicalIndex) {
+        records.sort((a, b) => b.datetime.getTime() - a.datetime.getTime());
+      }
+
+      // Find similar days: same dayType, same hour, similar temperature
+      // Returns average demand from up to 7 most recent matching days
+      const findSimilarDaysDemand = (
+        region: string,
+        targetHour: number,
+        targetDayType: number,
+        targetTemp: number,
+        beforeTimestamp: number,
+        tempTolerance: number = 5 // degrees C
+      ): number | undefined => {
+        const records = historicalIndex.get(region);
+        if (!records) return undefined;
+
+        const matches: number[] = [];
+        const seenDates = new Set<string>(); // Track unique dates to get different days
+
+        for (const record of records) {
+          // Only consider records before the target timestamp
+          if (record.datetime.getTime() >= beforeTimestamp) continue;
+
+          // Match hour and dayType
+          if (record.hour !== targetHour || record.dayType !== targetDayType) continue;
+
+          // Check temperature similarity (if temp is available)
+          if (record.temp !== undefined && Math.abs(record.temp - targetTemp) > tempTolerance) continue;
+
+          // Track unique days
+          const dateKey = DateTime.fromJSDate(record.datetime).toISODate();
+          if (dateKey && !seenDates.has(dateKey)) {
+            seenDates.add(dateKey);
+            matches.push(record.demand);
+
+            // Stop after finding 7 different days
+            if (matches.length >= 7) break;
+          }
+        }
+
+        if (matches.length === 0) return undefined;
+
+        // Return average of matching days
+        return matches.reduce((sum, d) => sum + d, 0) / matches.length;
+      };
 
       console.log(`  📊 Historical data loaded: ${demandHistory.size} demand records, ${tempHistory.size} temp records`);
 
@@ -264,24 +501,54 @@ program
         for (const weather of weatherData.records) {
           const datetime = DateTime.fromISO(weather.datetime).plus({ hours: 1 }).toJSDate();
           const ts = datetime.getTime();
+          const dt = DateTime.fromJSDate(datetime);
+          const hour = dt.hour;
+          const dow = dt.weekday;
+          const dayType = dow === 7 ? 2 : dow === 6 ? 1 : 0;
 
-          // Get last known values as fallback for missing lags
-          const lastDemand = lastKnownDemand.get(region)?.value;
           const lastTemp = lastKnownTemp.get(region)?.value;
+          const currentTemp = weather.temp;
 
-          // Calculate lag features - use last known values if specific lag is missing
-          const demandLag1h = demandHistory.get(`${ts - 3600000}_${region}`) ?? lastDemand;
-          const demandLag24h = demandHistory.get(`${ts - 86400000}_${region}`) ?? lastDemand;
-          const demandLag168h = demandHistory.get(`${ts - 604800000}_${region}`) ?? lastDemand;
-          const tempLag1h = tempHistory.get(`${ts - 3600000}_${region}`) ?? lastTemp;
-          const tempLag24h = tempHistory.get(`${ts - 86400000}_${region}`) ?? lastTemp;
+          // Get "similar days" demand - average from last 7 days matching dayType, hour, and similar temp
+          // This is our best estimate for what demand should be at this time
+          const similarDaysDemand = findSimilarDaysDemand(region, hour, dayType, currentTemp, ts);
 
-          // Calculate rolling averages
+          // Calculate lag features - use similar days demand as fallback for missing lags
+          const lag1hTs = ts - 3600000;
+          const lag24hTs = ts - 86400000;
+          const lag168hTs = ts - 604800000;
+
+          // For lag values, try actual data first, then similar days for that time, then typical
+          const getLagDemand = (lagTs: number): number | undefined => {
+            // First try actual historical data
+            const actual = demandHistory.get(`${lagTs}_${region}`);
+            if (actual !== undefined) return actual;
+
+            // Then try similar days for the lag time
+            const lagDt = DateTime.fromMillis(lagTs);
+            const lagHour = lagDt.hour;
+            const lagDow = lagDt.weekday;
+            const lagDayType = lagDow === 7 ? 2 : lagDow === 6 ? 1 : 0;
+            const lagTemp = tempHistory.get(`${lagTs}_${region}`) ?? currentTemp;
+            const similar = findSimilarDaysDemand(region, lagHour, lagDayType, lagTemp, lagTs);
+            if (similar !== undefined) return similar;
+
+            // Finally fall back to typical demand
+            return getTypicalDemandForTime(region, lagTs);
+          };
+
+          const demandLag1h = getLagDemand(lag1hTs);
+          const demandLag24h = getLagDemand(lag24hTs);
+          const demandLag168h = getLagDemand(lag168hTs);
+          const tempLag1h = tempHistory.get(`${lag1hTs}_${region}`) ?? lastTemp;
+          const tempLag24h = tempHistory.get(`${lag24hTs}_${region}`) ?? lastTemp;
+
+          // Calculate rolling averages using similar approach
           let demandSum = 0, tempSum = 0, tempMax = -Infinity, count = 0;
           for (let h = 1; h <= 24; h++) {
             const lagTs = ts - h * 3600000;
-            const d = demandHistory.get(`${lagTs}_${region}`);
-            const t = tempHistory.get(`${lagTs}_${region}`);
+            const d = getLagDemand(lagTs);
+            const t = tempHistory.get(`${lagTs}_${region}`) ?? lastTemp;
             if (d !== undefined && t !== undefined) {
               demandSum += d;
               tempSum += t;
@@ -290,8 +557,8 @@ program
             }
           }
 
-          // Use last known values for rolling averages if no historical data found
-          const demandRolling24h = count > 0 ? demandSum / count : lastDemand;
+          // Use calculated values
+          const demandRolling24h = count > 0 ? demandSum / count : similarDaysDemand ?? lastKnownDemand.get(region)?.value;
           const tempRolling24h = count > 0 ? tempSum / count : lastTemp;
           const tempMax24h = count > 0 ? tempMax : lastTemp;
 
@@ -308,8 +575,39 @@ program
 
           const mockRecord = { datetime, region, demand: 0, weather };
           const features = buildFeatureVector(mockRecord, lagData);
-          const basePrediction = model.predict(features);
-          const prediction = basePrediction * scaleFactor;
+
+          let prediction: number;
+
+          if (options.model === 'hybrid') {
+            // Hybrid model handles bounds internally - no blending needed
+            // Calculate days ahead from forecast start for growth adjustment
+            const forecastStart = DateTime.fromISO(options.start);
+            const currentDate = DateTime.fromJSDate(datetime);
+            const daysAhead = Math.max(0, currentDate.diff(forecastStart, 'days').days);
+
+            const hybridPrediction = (model as HybridModel).predictForRegion(features, region, daysAhead);
+            prediction = (hybridPrediction ?? similarDaysDemand ?? lastKnownDemand.get(region)?.value ?? 0) * scaleFactor;
+          } else {
+            // Regression/XGBoost model
+            const basePrediction = (model as RegressionModel | XGBoostModel).predict(features);
+
+            // Check if we have actual lag1h data or if it came from similar days
+            const hasActualLag1h = demandHistory.has(`${lag1hTs}_${region}`);
+
+            if (hasActualLag1h) {
+              // Use model prediction directly when we have real lag data
+              prediction = basePrediction * scaleFactor;
+            } else {
+              // When lag1h is estimated (from similar days), blend model prediction with similar days
+              // This prevents the cold start death spiral by anchoring to historical patterns
+              const blendRatio = 0.5; // 50% model, 50% similar days
+              if (similarDaysDemand !== undefined) {
+                prediction = (basePrediction * blendRatio + similarDaysDemand * (1 - blendRatio)) * scaleFactor;
+              } else {
+                prediction = basePrediction * scaleFactor;
+              }
+            }
+          }
 
           forecasts.push({
             datetime,
@@ -352,7 +650,10 @@ program
 
     const demandData = parseDemandCsv(options.demand);
     console.log('Demand Data:');
-    console.log(`  File: ${options.demand}`);
+    console.log(`  Path: ${options.demand}`);
+    if (demandData.filesProcessed && demandData.filesProcessed > 1) {
+      console.log(`  Files: ${demandData.filesProcessed} CSV files`);
+    }
     console.log(`  Records: ${demandData.records.length}`);
     console.log(`  Regions: ${demandData.regions.join(', ')}`);
     console.log(`  Date Range: ${demandData.startDate.toISOString()} to ${demandData.endDate.toISOString()}`);
@@ -381,7 +682,6 @@ program
 
     // Parse forecast file
     const forecastContent = readFileSync(options.forecast, 'utf-8');
-    const { parse } = require('csv-parse/sync');
     const forecastRows = parse(forecastContent, { columns: true, skip_empty_lines: true, trim: true });
 
     // Parse actual demand
@@ -599,6 +899,192 @@ program
     }
 
     console.log('\n✅ Evaluation complete!');
+  });
+
+// DATABASE commands
+const dbCommand = program
+  .command('db')
+  .description('Database management commands');
+
+// DB STATUS - Show database statistics
+dbCommand
+  .command('status')
+  .description('Show database statistics')
+  .action(() => {
+    console.log('\n📊 Database Status\n');
+
+    try {
+      const db = getDatabase();
+      const stats = db.getStats();
+
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('                    DATABASE STATISTICS                         ');
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      console.log(`Database Path: ${db.getPath()}\n`);
+
+      console.log('📈 Record Counts:');
+      console.log(`  • Demand Records: ${stats.demandRecords.toLocaleString()}`);
+      console.log(`  • Weather Records: ${stats.weatherRecords.toLocaleString()}`);
+      console.log(`  • Saved Models: ${stats.models}`);
+
+      if (stats.demandDateRange.start && stats.demandDateRange.end) {
+        console.log('\n📅 Demand Date Range:');
+        console.log(`  • Start: ${stats.demandDateRange.start}`);
+        console.log(`  • End: ${stats.demandDateRange.end}`);
+      }
+
+      if (stats.weatherDateRange.start && stats.weatherDateRange.end) {
+        console.log('\n🌤️  Weather Date Range:');
+        console.log(`  • Start: ${stats.weatherDateRange.start}`);
+        console.log(`  • End: ${stats.weatherDateRange.end}`);
+      }
+
+      if (stats.regions.length > 0) {
+        console.log('\n🗺️  Regions:');
+        console.log(`  ${stats.regions.join(', ')}`);
+      }
+
+      closeDatabase();
+      console.log('\n✅ Database status complete!');
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// DB IMPORT - Import data into database
+dbCommand
+  .command('import')
+  .description('Import demand or weather data into the database')
+  .requiredOption('-t, --type <type>', 'Data type: demand or weather')
+  .requiredOption('-f, --file <path>', 'File or folder path to import')
+  .option('-l, --location <name>', 'Location name for weather data (e.g., Manila, Cebu, Davao)')
+  .option('--forecast', 'Mark weather data as forecast (not historical)')
+  .action((options) => {
+    console.log('\n🔄 Importing data...\n');
+
+    try {
+      const db = getDatabase();
+
+      if (options.type === 'demand') {
+        const demandData = parseDemandCsv(options.file);
+        const result = db.importDemandRecords(demandData.records, options.file);
+
+        console.log(`✅ Imported ${result.inserted} demand records`);
+        if (demandData.filesProcessed && demandData.filesProcessed > 1) {
+          console.log(`   From ${demandData.filesProcessed} files`);
+        }
+        console.log(`   Regions: ${demandData.regions.join(', ')}`);
+        console.log(`   Date Range: ${DateTime.fromJSDate(demandData.startDate).toISODate()} to ${DateTime.fromJSDate(demandData.endDate).toISODate()}`);
+
+      } else if (options.type === 'weather') {
+        if (!options.location) {
+          console.error('❌ Location (-l, --location) is required for weather data import');
+          process.exit(1);
+        }
+
+        const weatherData = parseWeatherCsv(options.file);
+        const result = db.importWeatherRecords(
+          weatherData.records,
+          options.location,
+          options.forecast || false,
+          options.file
+        );
+
+        console.log(`✅ Imported ${result.inserted} weather records`);
+        console.log(`   Location: ${options.location} (${weatherData.city})`);
+        console.log(`   Type: ${options.forecast ? 'Forecast' : 'Historical'}`);
+        console.log(`   Date Range: ${DateTime.fromJSDate(weatherData.startDate).toISODate()} to ${DateTime.fromJSDate(weatherData.endDate).toISODate()}`);
+
+      } else {
+        console.error('❌ Invalid type. Use "demand" or "weather"');
+        process.exit(1);
+      }
+
+      closeDatabase();
+      console.log('\n✅ Import complete!');
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// DB MODELS - List and manage saved models
+dbCommand
+  .command('models')
+  .description('List and manage saved models')
+  .option('-a, --activate <id>', 'Activate a specific model by ID')
+  .action((options) => {
+    try {
+      const db = getDatabase();
+
+      if (options.activate) {
+        const modelId = parseInt(options.activate);
+        db.activateModel(modelId);
+        console.log(`\n✅ Model ${modelId} activated`);
+        closeDatabase();
+        return;
+      }
+
+      const models = db.getAllModels();
+
+      if (models.length === 0) {
+        console.log('\n📊 No saved models found');
+        console.log('   Train a model and it will be automatically saved to the database.');
+        closeDatabase();
+        return;
+      }
+
+      console.log('\n📊 Saved Models\n');
+      console.log('═══════════════════════════════════════════════════════════════════════════════');
+      console.log('  ID │ Active │   Type     │    R²    │   MAPE   │  Samples  │    Created');
+      console.log('═══════════════════════════════════════════════════════════════════════════════');
+
+      for (const model of models) {
+        const active = model.isActive ? '  ✓  ' : '     ';
+        const type = model.modelType.padEnd(10);
+        const r2 = model.r2Score.toFixed(4).padStart(8);
+        const mape = (model.mape.toFixed(2) + '%').padStart(8);
+        const samples = model.trainingSamples.toString().padStart(9);
+        // SQLite CURRENT_TIMESTAMP returns "YYYY-MM-DD HH:mm:ss" format
+        const dt = DateTime.fromSQL(model.createdAt);
+        const created = dt.isValid ? dt.toFormat('yyyy-MM-dd HH:mm') : model.createdAt?.substring(0, 16) || 'N/A';
+
+        console.log(` ${model.id.toString().padStart(3)} │ ${active} │ ${type} │ ${r2} │ ${mape} │ ${samples} │ ${created}`);
+      }
+
+      console.log('───────────────────────────────────────────────────────────────────────────────');
+      console.log('\n💡 Use --activate <id> to set a model as active for forecasting');
+
+      closeDatabase();
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// DB CLEAR - Clear database data
+dbCommand
+  .command('clear')
+  .description('Clear all data from the database')
+  .option('--confirm', 'Confirm clearing all data')
+  .action((options) => {
+    if (!options.confirm) {
+      console.log('\n⚠️  This will delete ALL data from the database.');
+      console.log('   Use --confirm to proceed.');
+      return;
+    }
+
+    try {
+      const db = getDatabase();
+      db.clearAll();
+      closeDatabase();
+      console.log('\n✅ Database cleared successfully');
+    } catch (error: any) {
+      console.error(`\n❌ Error: ${error.message}`);
+      process.exit(1);
+    }
   });
 
 program.parse();

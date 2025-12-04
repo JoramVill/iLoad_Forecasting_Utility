@@ -2,9 +2,17 @@ import MultivariateLinearRegression from 'ml-regression-multivariate-linear';
 import { TrainingSample, ModelResult, FeatureVector } from '../types/index.js';
 import { featureVectorToArray, getFeatureNames } from '../features/index.js';
 
+export interface SerializedModel {
+  coefficients: number[];
+  featureNames: string[];
+  intercept: number;
+}
+
 export class RegressionModel {
   private model: MultivariateLinearRegression | null = null;
   private featureNames: string[];
+  private storedCoefficients: number[] | null = null;
+  private storedIntercept: number = 0;
 
   constructor() {
     this.featureNames = getFeatureNames();
@@ -32,6 +40,11 @@ export class RegressionModel {
   }
 
   predict(features: FeatureVector): number {
+    // Use stored coefficients if loaded from database
+    if (this.storedCoefficients) {
+      return this.predictWithStoredCoefficients(features);
+    }
+
     if (!this.model) throw new Error('Model not trained');
     const x = featureVectorToArray(features);
     return Math.max(0, this.model.predict(x)[0]); // Demand can't be negative
@@ -91,12 +104,81 @@ export class RegressionModel {
   }
 
   getCoefficients(): { feature: string; coefficient: number }[] {
-    if (!this.model) return [];
-    const coefficients = this.model.weights;
+    if (!this.model && !this.storedCoefficients) return [];
 
+    if (this.storedCoefficients) {
+      return this.featureNames.map((name, i) => ({
+        feature: name,
+        coefficient: i < this.storedCoefficients!.length ? this.storedCoefficients![i] : 0
+      }));
+    }
+
+    const coefficients = this.model!.weights;
     return this.featureNames.map((name, i) => ({
       feature: name,
       coefficient: i < coefficients.length ? coefficients[i][0] : 0
     }));
+  }
+
+  // Serialize model for database storage
+  serialize(): SerializedModel {
+    if (!this.model && !this.storedCoefficients) {
+      throw new Error('No model to serialize');
+    }
+
+    if (this.storedCoefficients) {
+      return {
+        coefficients: this.storedCoefficients,
+        featureNames: this.featureNames,
+        intercept: this.storedIntercept
+      };
+    }
+
+    const weights = this.model!.weights;
+    return {
+      coefficients: weights.map(w => w[0]),
+      featureNames: this.featureNames,
+      intercept: 0 // ml-regression-multivariate-linear includes intercept in weights
+    };
+  }
+
+  // Load model from serialized data
+  loadFromSerialized(data: SerializedModel): void {
+    this.storedCoefficients = data.coefficients;
+    this.storedIntercept = data.intercept;
+    this.featureNames = data.featureNames;
+    this.model = null; // Clear any existing model
+  }
+
+  // Predict using stored coefficients (for loaded models)
+  predictWithStoredCoefficients(features: FeatureVector): number {
+    if (!this.storedCoefficients) {
+      throw new Error('No stored coefficients available');
+    }
+
+    const x = featureVectorToArray(features);
+    let result = this.storedIntercept;
+
+    for (let i = 0; i < Math.min(x.length, this.storedCoefficients.length); i++) {
+      result += x[i] * this.storedCoefficients[i];
+    }
+
+    return Math.max(0, result);
+  }
+
+  // Check if model is loaded (either trained or from storage)
+  isLoaded(): boolean {
+    return this.model !== null || this.storedCoefficients !== null;
+  }
+
+  // Get coefficient array for database storage
+  getCoefficientsArray(): number[] {
+    if (this.storedCoefficients) {
+      return this.storedCoefficients;
+    }
+    if (this.model) {
+      return this.model.weights.map(w => w[0]);
+    }
+    return [];
   }
 }
