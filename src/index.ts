@@ -888,6 +888,112 @@ program
       reportContent += '\n';
     }
 
+    // Peak and Trough Analysis
+    console.log('\n📊 Peak & Trough Analysis by Region:');
+    reportContent += '\n## Peak & Trough Analysis\n\n';
+
+    console.log('┌─────────┬────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ Region  │  Type   │ Actual (MW) │ Forecast (MW) │  Error  │ % Error │   DateTime   │');
+    console.log('├─────────┼─────────┼─────────────┼───────────────┼─────────┼─────────┼──────────────┤');
+
+    reportContent += '| Region | Type | Actual (MW) | Forecast (MW) | Error (MW) | % Error | DateTime |\n';
+    reportContent += '|--------|------|-------------|---------------|------------|---------|----------|\n';
+
+    // Track overall peak/trough stats
+    let peakErrors: number[] = [];
+    let troughErrors: number[] = [];
+
+    for (const [region, stats] of regionStats) {
+      // Group errors by date to find daily peaks and troughs
+      const byDate = new Map<string, typeof stats.errors>();
+      for (const e of stats.errors) {
+        const dateKey = DateTime.fromJSDate(e.datetime).toISODate() || '';
+        if (!byDate.has(dateKey)) {
+          byDate.set(dateKey, []);
+        }
+        byDate.get(dateKey)!.push(e);
+      }
+
+      // Find peaks and troughs for each day
+      const dailyPeaks: typeof stats.errors = [];
+      const dailyTroughs: typeof stats.errors = [];
+
+      for (const [, dayErrors] of byDate) {
+        if (dayErrors.length < 12) continue; // Skip incomplete days
+
+        // Find peak (max actual demand)
+        const peak = dayErrors.reduce((max, e) => e.actual > max.actual ? e : max, dayErrors[0]);
+        dailyPeaks.push(peak);
+
+        // Find trough (min actual demand)
+        const trough = dayErrors.reduce((min, e) => e.actual < min.actual ? e : min, dayErrors[0]);
+        dailyTroughs.push(trough);
+      }
+
+      if (dailyPeaks.length === 0) continue;
+
+      // Calculate peak statistics
+      const avgActualPeak = dailyPeaks.reduce((sum, e) => sum + e.actual, 0) / dailyPeaks.length;
+      const avgForecastPeak = dailyPeaks.reduce((sum, e) => sum + e.forecast, 0) / dailyPeaks.length;
+      const peakError = avgForecastPeak - avgActualPeak;
+      const peakMape = dailyPeaks.reduce((sum, e) => sum + Math.abs(e.forecast - e.actual) / e.actual * 100, 0) / dailyPeaks.length;
+
+      // Calculate trough statistics
+      const avgActualTrough = dailyTroughs.reduce((sum, e) => sum + e.actual, 0) / dailyTroughs.length;
+      const avgForecastTrough = dailyTroughs.reduce((sum, e) => sum + e.forecast, 0) / dailyTroughs.length;
+      const troughError = avgForecastTrough - avgActualTrough;
+      const troughMape = dailyTroughs.reduce((sum, e) => sum + Math.abs(e.forecast - e.actual) / e.actual * 100, 0) / dailyTroughs.length;
+
+      // Track for overall stats
+      peakErrors.push(peakMape);
+      troughErrors.push(troughMape);
+
+      // Find worst peak and trough for display
+      const worstPeak = dailyPeaks.reduce((worst, e) =>
+        Math.abs(e.forecast - e.actual) > Math.abs(worst.forecast - worst.actual) ? e : worst, dailyPeaks[0]);
+      const worstTrough = dailyTroughs.reduce((worst, e) =>
+        Math.abs(e.forecast - e.actual) > Math.abs(worst.forecast - worst.actual) ? e : worst, dailyTroughs[0]);
+
+      // Display peak row
+      const peakDtStr = DateTime.fromJSDate(worstPeak.datetime).toFormat('MM/dd HH:mm');
+      console.log(`│ ${region.padEnd(7)} │  Peak   │ ${avgActualPeak.toFixed(0).padStart(11)} │ ${avgForecastPeak.toFixed(0).padStart(13)} │ ${(peakError >= 0 ? '+' : '') + peakError.toFixed(0).padStart(6)} │ ${peakMape.toFixed(1).padStart(6)}% │ ${peakDtStr.padStart(12)} │`);
+      reportContent += `| ${region} | Peak | ${avgActualPeak.toFixed(0)} | ${avgForecastPeak.toFixed(0)} | ${peakError >= 0 ? '+' : ''}${peakError.toFixed(0)} | ${peakMape.toFixed(1)}% | ${peakDtStr} |\n`;
+
+      // Display trough row
+      const troughDtStr = DateTime.fromJSDate(worstTrough.datetime).toFormat('MM/dd HH:mm');
+      console.log(`│         │ Trough  │ ${avgActualTrough.toFixed(0).padStart(11)} │ ${avgForecastTrough.toFixed(0).padStart(13)} │ ${(troughError >= 0 ? '+' : '') + troughError.toFixed(0).padStart(6)} │ ${troughMape.toFixed(1).padStart(6)}% │ ${troughDtStr.padStart(12)} │`);
+      reportContent += `| | Trough | ${avgActualTrough.toFixed(0)} | ${avgForecastTrough.toFixed(0)} | ${troughError >= 0 ? '+' : ''}${troughError.toFixed(0)} | ${troughMape.toFixed(1)}% | ${troughDtStr} |\n`;
+
+      console.log('├─────────┼─────────┼─────────────┼───────────────┼─────────┼─────────┼──────────────┤');
+    }
+
+    console.log('└─────────┴─────────┴─────────────┴───────────────┴─────────┴─────────┴──────────────┘');
+
+    // Overall peak/trough summary
+    if (peakErrors.length > 0) {
+      const avgPeakMape = peakErrors.reduce((sum, e) => sum + e, 0) / peakErrors.length;
+      const avgTroughMape = troughErrors.reduce((sum, e) => sum + e, 0) / troughErrors.length;
+
+      console.log('\n📈 Peak/Trough Summary:');
+      console.log(`  • Average Peak MAPE: ${avgPeakMape.toFixed(2)}%`);
+      console.log(`  • Average Trough MAPE: ${avgTroughMape.toFixed(2)}%`);
+
+      reportContent += '\n### Peak/Trough Summary\n\n';
+      reportContent += `- Average Peak MAPE: ${avgPeakMape.toFixed(2)}%\n`;
+      reportContent += `- Average Trough MAPE: ${avgTroughMape.toFixed(2)}%\n`;
+
+      if (avgPeakMape > avgTroughMape * 1.5) {
+        console.log('  • ⚠️  Peaks are harder to forecast than troughs');
+        reportContent += '- Peaks are harder to forecast than troughs\n';
+      } else if (avgTroughMape > avgPeakMape * 1.5) {
+        console.log('  • ⚠️  Troughs are harder to forecast than peaks');
+        reportContent += '- Troughs are harder to forecast than peaks\n';
+      } else {
+        console.log('  • Peak and trough accuracy are similar');
+        reportContent += '- Peak and trough accuracy are similar\n';
+      }
+    }
+
     // Write report if output specified
     if (options.output) {
       const outputDir = dirname(options.output);
